@@ -8,7 +8,7 @@ export interface Listing {
   image_urls: string[];
   seller_whatsapp: string;
   is_approved: boolean;
-  payment_status: string;
+  payment_status?: string;
   is_negotiable: boolean;
   location: string;
   is_sold: boolean;

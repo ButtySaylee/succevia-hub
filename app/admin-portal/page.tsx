@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { supabase } from "@/lib/supabase";
 import { Listing, CATEGORIES } from "@/types";
+import PinResetAdmin from "@/components/PinResetAdmin";
 import {
   CheckCircle,
   Trash2,
@@ -20,11 +21,12 @@ import {
   Tag,
   RotateCcw,
   Search,
+  Key,
 } from "lucide-react";
 
 const SELL_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
 
-type Tab = "pending" | "all";
+type Tab = "pending" | "all" | "pin-resets";
 
 interface EditForm {
   title: string;
@@ -368,27 +370,36 @@ export default function AdminPortalPage() {
       {/* Tabs */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 flex gap-1 pt-2">
-          {(["pending", "all"] as Tab[]).map((t) => (
+          {(["pending", "all", "pin-resets"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
-              className={`px-5 py-2 text-sm font-semibold rounded-t-lg transition-colors ${
+              className={`px-5 py-2 text-sm font-semibold rounded-t-lg transition-colors flex items-center gap-2 ${
                 tab === t
                   ? "bg-[#002147] text-white"
                   : "text-slate-500 hover:text-[#002147]"
               }`}
             >
+              {t === "pin-resets" && <Key className="w-4 h-4" />}
               {t === "pending"
                 ? `Pending${stats.pending > 0 ? ` (${stats.pending})` : ""}`
-                : "All Listings"}
+                : t === "all"
+                ? "All Listings"
+                : "PIN Resets"}
             </button>
           ))}
         </div>
       </div>
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Search + filter */}
-        <div className="flex gap-2 mb-4">
+        {/* PIN Resets Tab */}
+        {tab === "pin-resets" && <PinResetAdmin adminPassword={pwInput} />}
+
+        {/* Listings Tabs */}
+        {tab !== "pin-resets" && (
+          <>
+            {/* Search + filter */}
+            <div className="flex gap-2 mb-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
@@ -398,78 +409,78 @@ export default function AdminPortalPage() {
               placeholder="Search listings..."
               className="w-full border border-slate-300 rounded-xl pl-9 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
             />
-          </div>
-          <select
-            value={filterCategory}
-            onChange={(e) => setFilterCategory(e.target.value)}
-            className="border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] bg-white"
-          >
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {c}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Bulk approve toolbar — Pending tab only */}
-        {tab === "pending" && filteredListings.length > 0 && (
-          <div className="flex items-center gap-3 mb-4">
-            <button
-              onClick={() =>
-                selectedIds.size === filteredListings.length
-                  ? setSelectedIds(new Set())
-                  : setSelectedIds(new Set(filteredListings.map((l) => l.id)))
-              }
-              className="text-xs text-slate-500 hover:text-[#002147] font-medium transition-colors"
+            </div>
+            <select
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] bg-white"
             >
-              {selectedIds.size === filteredListings.length
-                ? "Deselect all"
-                : "Select all"}
-            </button>
-            {selectedIds.size > 0 && (
+              {CATEGORIES.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Bulk approve toolbar — Pending tab only */}
+            {tab === "pending" && filteredListings.length > 0 && (
+            <div className="flex items-center gap-3 mb-4">
               <button
-                onClick={bulkApprove}
-                disabled={bulkBusy}
-                className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1da851] disabled:opacity-60 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all"
+                onClick={() =>
+                  selectedIds.size === filteredListings.length
+                    ? setSelectedIds(new Set())
+                    : setSelectedIds(new Set(filteredListings.map((l) => l.id)))
+                }
+                className="text-xs text-slate-500 hover:text-[#002147] font-medium transition-colors"
               >
-                {bulkBusy ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <CheckCircle className="w-3.5 h-3.5" />
-                )}
-                Approve Selected ({selectedIds.size})
+                {selectedIds.size === filteredListings.length
+                  ? "Deselect all"
+                  : "Select all"}
               </button>
-            )}
-          </div>
-        )}
+              {selectedIds.size > 0 && (
+                <button
+                  onClick={bulkApprove}
+                  disabled={bulkBusy}
+                  className="flex items-center gap-1.5 bg-[#25D366] hover:bg-[#1da851] disabled:opacity-60 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-all"
+                >
+                  {bulkBusy ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <CheckCircle className="w-3.5 h-3.5" />
+                  )}
+                  Approve Selected ({selectedIds.size})
+                </button>
+              )}
+            </div>
+          )}
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-[#25D366]" />
-          </div>
-        ) : filteredListings.length === 0 ? (
-          <div className="text-center py-20">
-            <CheckCircle className="w-12 h-12 text-[#25D366] mx-auto mb-3" />
-            <h2 className="text-lg font-bold text-slate-700">
-              {searchQuery || filterCategory !== "All"
-                ? "No results match your filter."
-                : tab === "pending"
-                ? "All caught up!"
-                : "No listings found."}
-            </h2>
-          </div>
-        ) : (
-          <>
-            <p className="text-sm text-slate-500 mb-4 font-medium">
-              <span className="font-bold text-[#002147]">
-                {filteredListings.length}
-              </span>{" "}
-              listing{filteredListings.length !== 1 ? "s" : ""}
-            </p>
+            {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-8 h-8 animate-spin text-[#25D366]" />
+            </div>
+          ) : filteredListings.length === 0 ? (
+            <div className="text-center py-20">
+              <CheckCircle className="w-12 h-12 text-[#25D366] mx-auto mb-3" />
+              <h2 className="text-lg font-bold text-slate-700">
+                {searchQuery || filterCategory !== "All"
+                  ? "No results match your filter."
+                  : tab === "pending"
+                  ? "All caught up!"
+                  : "No listings found."}
+              </h2>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-slate-500 mb-4 font-medium">
+                <span className="font-bold text-[#002147]">
+                  {filteredListings.length}
+                </span>{" "}
+                listing{filteredListings.length !== 1 ? "s" : ""}
+              </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {filteredListings.map((l) => {
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filteredListings.map((l) => {
                 const busy = actionId === l.id;
                 const isEditing = editId === l.id;
                 const isSelected = selectedIds.has(l.id);
@@ -665,8 +676,10 @@ export default function AdminPortalPage() {
                   </div>
                 );
               })}
-            </div>
-          </>
+              </div>
+            </>
+          )}
+        </>
         )}
       </div>
     </main>

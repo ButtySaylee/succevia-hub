@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { MessageCircle, Tag, MapPin, Share2, Check, Images } from "lucide-react";
 import { Listing } from "@/types";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
+import { trackEvent } from "@/components/GoogleAnalytics";
 
 interface ItemCardProps {
   listing: Listing;
@@ -27,6 +29,15 @@ export default function ItemCard({ listing, isNew }: ItemCardProps) {
   );
   const waLink = `https://wa.me/${listing.seller_whatsapp}?text=${waMessage}`;
 
+  function handleWhatsAppClick() {
+    trackEvent("contact_seller", {
+      listing_id: listing.id,
+      listing_title: listing.title,
+      category: listing.category,
+      price: listing.price,
+    });
+  }
+
   async function handleShare(e: React.MouseEvent) {
     e.preventDefault();
     const url = `${window.location.origin}/listings/${listing.id}`;
@@ -46,7 +57,7 @@ export default function ItemCard({ listing, isNew }: ItemCardProps) {
         {/* Image */}
         <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
           <Image
-            src={listing.image_urls[0]}
+            src={optimizeCloudinaryUrl(listing.image_urls[0], 800)}
             alt={listing.title}
             fill
             className={`object-cover group-hover:scale-105 transition-transform duration-300 ${
@@ -120,6 +131,7 @@ export default function ItemCard({ listing, isNew }: ItemCardProps) {
             href={waLink}
             target="_blank"
             rel="noopener noreferrer"
+              onClick={handleWhatsAppClick}
             className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] active:scale-95 text-white font-semibold py-2.5 rounded-xl text-sm transition-all shadow"
           >
             <MessageCircle className="w-4 h-4" />

@@ -2,11 +2,12 @@ import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import ItemCard from "@/components/ItemCard";
+import LoadMore from "@/components/LoadMore";
 import { Listing, CATEGORIES, CATEGORY_ICONS } from "@/types";
 import { ShoppingBag, Search, Plus } from "lucide-react";
 
 interface HomePageProps {
-  searchParams: Promise<{ category?: string; q?: string; status?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; status?: string; page?: string }>;
 }
 
 export const metadata: Metadata = {
@@ -31,31 +32,38 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const selectedCategory = params?.category ?? "All";
   const searchQuery = params?.q ?? "";
   const statusFilter = params?.status === "available" ? "available" : "all";
+  const parsedPage = Number.parseInt(params?.page ?? "1", 10);
+  const currentPage = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
+  const itemsPerPage = 30;
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage - 1;
 
   let query = supabase
     .from("listings")
-    .select("*")
+    .select(
+      "id, created_at, title, description, price, category, image_urls, seller_whatsapp, is_approved, is_negotiable, location, is_sold",
+      { count: "exact" }
+    )
     .eq("is_approved", true)
     .order("is_sold", { ascending: true })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(startIndex, endIndex);
 
   if (selectedCategory !== "All") {
     query = query.eq("category", selectedCategory);
   }
 
-  const { data: listings, error } = await query;
+  if (statusFilter === "available") {
+    query = query.eq("is_sold", false);
+  }
 
-  const filtered: Listing[] = (listings ?? []).filter((item: Listing) => {
-    if (statusFilter === "available" && item.is_sold) return false;
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      item.title.toLowerCase().includes(q) ||
-      item.description.toLowerCase().includes(q)
-    );
-  });
+  if (searchQuery.trim()) {
+    const q = searchQuery.trim().replace(/,/g, " ");
+    query = query.or(`title.ilike.%${q}%,description.ilike.%${q}%`);
+  }
 
-  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  const { data: listings, error, count } = await query;
+  const filtered: Listing[] = (listings ?? []) as Listing[];
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -151,8 +159,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-3">
                 <p className="text-slate-600 font-medium text-sm">
-                  <span className="font-bold text-[#002147]">{filtered.length}</span>{" "}
-                  listing{filtered.length !== 1 ? "s" : ""}{" "}
+                  <span className="font-bold text-[#002147]">{count ?? filtered.length}</span>{" "}
+                  listing{(count ?? filtered.length) !== 1 ? "s" : ""}{" "}
                   {selectedCategory !== "All"
                     ? `in ${selectedCategory}`
                     : statusFilter === "available"
@@ -198,13 +206,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filtered.map((listing) => (
-                <ItemCard
-                  key={listing.id}
-                  listing={listing}
-                  isNew={new Date(listing.created_at).getTime() > oneDayAgo}
-                />
+                <ItemCard key={listing.id} listing={listing} />
               ))}
             </div>
+
+              <LoadMore
+                currentPage={currentPage}
+                totalItems={count ?? 0}
+                itemsPerPage={itemsPerPage}
+                category={selectedCategory}
+                searchQuery={searchQuery}
+                statusFilter={statusFilter}
+              />
           </>
         )}
       </section>

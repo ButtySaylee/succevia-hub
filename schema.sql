@@ -19,6 +19,7 @@ create table listings (
   category        text not null check (category in ('Electronics', 'Vehicles', 'Fashion', 'Property', 'Home')),
   image_urls      text[] not null,
   seller_whatsapp text not null,
+  seller_pin_hash text not null,
   is_approved     boolean default false,
   payment_status  text default 'pending'
 );

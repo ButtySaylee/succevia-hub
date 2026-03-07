@@ -10,6 +10,7 @@ interface SellerMarkSoldProps {
 export default function SellerMarkSold({ listingId }: SellerMarkSoldProps) {
   const [open, setOpen] = useState(false);
   const [whatsapp, setWhatsapp] = useState("");
+  const [sellerPin, setSellerPin] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -17,9 +18,15 @@ export default function SellerMarkSold({ listingId }: SellerMarkSoldProps) {
   async function handleMarkSold() {
     setError(null);
     const waClean = whatsapp.replace(/\s/g, "");
+    const pin = sellerPin.trim();
 
     if (!/^\+?[0-9]{7,15}$/.test(waClean)) {
       setError("Enter your listing WhatsApp number in correct format.");
+      return;
+    }
+
+    if (!/^\d{4,8}$/.test(pin)) {
+      setError("Enter your seller PIN (4-8 digits).");
       return;
     }
 
@@ -28,7 +35,7 @@ export default function SellerMarkSold({ listingId }: SellerMarkSoldProps) {
       const res = await fetch("/api/listings/seller-sold", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: listingId, seller_whatsapp: waClean }),
+        body: JSON.stringify({ id: listingId, seller_whatsapp: waClean, seller_pin: pin }),
       });
 
       const payload = (await res.json()) as { error?: string };
@@ -66,13 +73,23 @@ export default function SellerMarkSold({ listingId }: SellerMarkSoldProps) {
       ) : (
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 space-y-2">
           <label className="block text-xs font-semibold text-slate-600">
-            Enter the WhatsApp number used when posting this listing
+            Enter the WhatsApp number and seller PIN used when posting this listing
           </label>
           <input
             type="tel"
             value={whatsapp}
             onChange={(e) => setWhatsapp(e.target.value)}
             placeholder="+231777123456"
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+          />
+          <input
+            type="password"
+            value={sellerPin}
+            onChange={(e) => setSellerPin(e.target.value)}
+            placeholder="Seller PIN"
+            inputMode="numeric"
+            pattern="[0-9]{4,8}"
+            maxLength={8}
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
           />
           {error && <p className="text-xs text-red-500">{error}</p>}

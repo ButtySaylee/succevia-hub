@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
 
 interface ImageCarouselProps {
   images: string[];
@@ -24,7 +25,7 @@ export default function ImageCarousel({ images, title, isSold }: ImageCarouselPr
   return (
     <div className="relative w-full h-64 sm:h-80 bg-slate-100 group">
       <Image
-        src={images[currentIndex]}
+          src={optimizeCloudinaryUrl(images[currentIndex], 1200)}
         alt={`${title} - Image ${currentIndex + 1}`}
         fill
         className="object-cover"

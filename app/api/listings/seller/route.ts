@@ -8,18 +8,20 @@ import {
   normalizeWhatsapp,
 } from "@/lib/seller-auth";
 
-export async function PATCH(req: NextRequest) {
-  const { id, seller_whatsapp, seller_pin } = await req.json();
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const sellerWhatsapp = searchParams.get("seller_whatsapp");
+  const sellerPin = searchParams.get("seller_pin");
 
-  if (!id || !seller_whatsapp || !seller_pin) {
+  if (!sellerWhatsapp || !sellerPin) {
     return NextResponse.json(
-      { error: "Missing id, seller_whatsapp, or seller_pin" },
+      { error: "Missing seller_whatsapp or seller_pin" },
       { status: 400 }
     );
   }
 
-  const waClean = normalizeWhatsapp(String(seller_whatsapp));
-  const pin = normalizePin(String(seller_pin));
+  const waClean = normalizeWhatsapp(sellerWhatsapp);
+  const pin = normalizePin(sellerPin);
 
   if (!isValidWhatsapp(waClean)) {
     return NextResponse.json(
@@ -50,27 +52,18 @@ export async function PATCH(req: NextRequest) {
     );
   }
 
-  const { error, data } = await supabaseAdmin
+  const { data, error } = await supabaseAdmin
     .from("listings")
-    .update({ is_sold: true })
-    .eq("id", id)
+    .select(
+      "id, created_at, title, description, price, category, image_urls, seller_whatsapp, is_approved, is_negotiable, location, is_sold"
+    )
     .eq("seller_whatsapp", waClean)
     .eq("seller_pin_hash", sellerPinHash)
-    .eq("is_approved", true)
-    .eq("is_sold", false)
-    .select("id")
-    .maybeSingle();
+    .order("created_at", { ascending: false });
 
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  if (!data) {
-    return NextResponse.json(
-      { error: "Listing not found or WhatsApp does not match" },
-      { status: 404 }
-    );
-  }
-
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ listings: data ?? [] });
 }

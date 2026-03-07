@@ -2,8 +2,8 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
+import imageCompression from "browser-image-compression";
 import Navbar from "@/components/Navbar";
-import { supabase } from "@/lib/supabase";
 import { CATEGORIES, Category, LIBERIA_LOCATIONS } from "@/types";
 import { Upload, Loader2, AlertCircle } from "lucide-react";
 
@@ -19,6 +19,8 @@ export default function SellPage() {
     price: "",
     category: "Electronics",
     seller_whatsapp: "",
+    seller_pin: "",
+    seller_pin_confirm: "",
     location: "Monrovia",
     is_negotiable: false,
   });
@@ -73,10 +75,20 @@ export default function SellPage() {
   }
 
   async function uploadToCloudinary(file: File): Promise<string> {
+      // Compress image before uploading
+      const options = {
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
+        useWebWorker: true,
+        fileType: file.type as "image/jpeg" | "image/png" | "image/webp",
+      };
+    
+      const compressedFile = await imageCompression(file, options);
+    
     const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
     const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
     const fd = new FormData();
-    fd.append("file", file);
+      fd.append("file", compressedFile);
     fd.append("upload_preset", uploadPreset);
     const res = await fetch(
       `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
@@ -102,22 +114,41 @@ export default function SellPage() {
       return;
     }
 
+    const pin = form.seller_pin.trim();
+    if (!/^\d{4,8}$/.test(pin)) {
+      setError("Seller PIN must be 4 to 8 digits.");
+      return;
+    }
+
+    if (pin !== form.seller_pin_confirm.trim()) {
+      setError("PIN confirmation does not match.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       // Upload all images to Cloudinary
       const imageUrls = await Promise.all(imageFiles.map(file => uploadToCloudinary(file)));
-      
-      const { error: dbError } = await supabase.from("listings").insert({
-        title: form.title.trim(),
-        description: form.description.trim(),
-        price: form.price.trim(),
-        category: form.category,
-        seller_whatsapp: waClean,
-        image_urls: imageUrls,
-        location: form.location,
-        is_negotiable: form.is_negotiable,
+
+      const res = await fetch("/api/listings/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          description: form.description.trim(),
+          price: form.price.trim(),
+          category: form.category,
+          seller_whatsapp: waClean,
+          seller_pin: pin,
+          image_urls: imageUrls,
+          location: form.location,
+          is_negotiable: form.is_negotiable,
+        }),
       });
-      if (dbError) throw new Error(dbError.message);
+
+      const payload = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(payload.error ?? "Failed to create listing.");
+
       router.push(`/sell/success?title=${encodeURIComponent(form.title.trim())}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -315,6 +346,49 @@ export default function SellPage() {
                 Buyers will contact you directly on WhatsApp.
               </p>
             </div>
+
+            {/* Seller PIN */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Seller PIN <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="seller_pin"
+                  value={form.seller_pin}
+                  onChange={handleChange}
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]{4,8}"
+                  minLength={4}
+                  maxLength={8}
+                  placeholder="4-8 digits"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-1">
+                  Confirm PIN <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="password"
+                  name="seller_pin_confirm"
+                  value={form.seller_pin_confirm}
+                  onChange={handleChange}
+                  required
+                  inputMode="numeric"
+                  pattern="[0-9]{4,8}"
+                  minLength={4}
+                  maxLength={8}
+                  placeholder="Repeat PIN"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                />
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 -mt-3">
+              Use this PIN (with your WhatsApp number) to manage or mark your listings as sold.
+            </p>
 
             {/* Negotiable */}
             <label className="flex items-center gap-3 cursor-pointer">
