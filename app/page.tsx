@@ -1,0 +1,183 @@
+import { supabase } from "@/lib/supabase";
+import Navbar from "@/components/Navbar";
+import ItemCard from "@/components/ItemCard";
+import { Listing, CATEGORIES, CATEGORY_ICONS } from "@/types";
+import { ShoppingBag, Search, Plus } from "lucide-react";
+
+interface HomePageProps {
+  searchParams: Promise<{ category?: string; q?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const selectedCategory = params?.category ?? "All";
+  const searchQuery = params?.q ?? "";
+
+  let query = supabase
+    .from("listings")
+    .select("*")
+    .eq("is_approved", true)
+    .eq("is_sold", false)
+    .order("created_at", { ascending: false });
+
+  if (selectedCategory !== "All") {
+    query = query.eq("category", selectedCategory);
+  }
+
+  const { data: listings, error } = await query;
+
+  const filtered: Listing[] = (listings ?? []).filter((item: Listing) => {
+    if (!searchQuery) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      item.title.toLowerCase().includes(q) ||
+      item.description.toLowerCase().includes(q)
+    );
+  });
+
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+  return (
+    <main className="min-h-screen bg-slate-50">
+      <Navbar />
+
+      {/* Hero Banner */}
+      <section className="bg-gradient-to-br from-[#002147] to-[#003580] text-white py-12 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <div className="flex items-center justify-center gap-3 mb-3">
+            <ShoppingBag className="w-8 h-8 text-[#25D366]" />
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
+              Gbana Market
+            </h1>
+          </div>
+          <p className="text-slate-300 text-sm sm:text-base max-w-md mx-auto mb-6">
+            {"Liberia's trusted marketplace. Buy and sell used & new items safely via WhatsApp."}
+          </p>
+
+          {/* Search — hidden input preserves the active category */}
+          <form method="GET" className="max-w-lg mx-auto relative">
+            <input type="hidden" name="category" value={selectedCategory} />
+            <input
+              type="text"
+              name="q"
+              defaultValue={searchQuery}
+              placeholder="Search listings..."
+              className="w-full pl-5 pr-14 py-3 rounded-full bg-white text-slate-800 text-sm shadow-lg focus:outline-none focus:ring-2 focus:ring-[#25D366] placeholder:text-slate-400"
+            />
+            <button
+              type="submit"
+              className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#25D366] p-2 rounded-full text-white"
+            >
+              <Search className="w-4 h-4" />
+            </button>
+          </form>
+        </div>
+      </section>
+
+      {/* Category Tabs */}
+      <section className="bg-white shadow-sm sticky top-[65px] z-40 overflow-x-auto">
+        <div className="max-w-6xl mx-auto px-4 py-2 flex gap-2">
+          {CATEGORIES.map((cat) => (
+            <a
+              key={cat}
+              href={
+                searchQuery
+                  ? `/?category=${cat}&q=${encodeURIComponent(searchQuery)}`
+                  : `/?category=${cat}`
+              }
+              className={
+                selectedCategory === cat
+                  ? "flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap bg-[#002147] text-white shadow"
+                  : "flex items-center gap-1 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors"
+              }
+            >
+              <span>{CATEGORY_ICONS[cat]}</span>
+              {cat}
+            </a>
+          ))}
+        </div>
+      </section>
+
+      {/* Listings Grid */}
+      <section className="max-w-6xl mx-auto px-4 py-8">
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-600 rounded-xl p-4 mb-6 text-sm">
+            Error loading listings. Please try again later.
+          </div>
+        )}
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-6xl mb-4">🛍️</div>
+            <h2 className="text-xl font-bold text-slate-700 mb-2">
+              No listings found
+            </h2>
+            <p className="text-slate-500 text-sm mb-6">
+              {searchQuery
+                ? `No results for "${searchQuery}". Try a different search.`
+                : "Be the first to list an item in this category!"}
+            </p>
+            <a
+              href="/sell"
+              className="inline-flex items-center gap-2 bg-[#25D366] text-white font-semibold px-6 py-3 rounded-full shadow hover:bg-[#1da851] transition-all"
+            >
+              <Plus className="w-4 h-4" />
+              Post a Listing
+            </a>
+          </div>
+        ) : (
+          <>
+            <div className="flex items-center justify-between mb-5">
+              <p className="text-slate-600 font-medium text-sm">
+                <span className="font-bold text-[#002147]">{filtered.length}</span>{" "}
+                listing{filtered.length !== 1 ? "s" : ""}{" "}
+                {selectedCategory !== "All"
+                  ? `in ${selectedCategory}`
+                  : "available"}
+                {searchQuery && (
+                  <span className="ml-1 text-slate-400">
+                    for &ldquo;{searchQuery}&rdquo;
+                  </span>
+                )}
+              </p>
+              <a
+                href="/sell"
+                className="flex items-center gap-1 text-xs font-semibold text-[#25D366] hover:text-[#1da851] transition-colors"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Sell an item
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+              {filtered.map((listing) => (
+                <ItemCard
+                  key={listing.id}
+                  listing={listing}
+                  isNew={new Date(listing.created_at).getTime() > oneDayAgo}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-[#002147] text-slate-400 text-center text-xs py-6 mt-10">
+        <p>© {new Date().getFullYear()} Gbana Market · Monrovia, Liberia 🇱🇷</p>
+        <p className="mt-1">Built with trust for the Liberian community</p>
+        <p className="mt-2 text-slate-500">
+          Owned & developed by{" "}
+          <a
+            href="https://butty-portfolio.vercel.app/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[#25D366] font-semibold hover:underline"
+          >
+            Butty Saylee
+          </a>
+        </p>
+      </footer>
+    </main>
+  );
+}
