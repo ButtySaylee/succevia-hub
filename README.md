@@ -2,7 +2,7 @@
 
 A modern two-sided marketplace platform for buying and selling items in Liberia. Sellers can list items with multiple images, and buyers can browse, search, and contact sellers directly via WhatsApp.
 
-**Live:** [gbana-market.vercel.app](https://gbana-market.vercel.app)
+**Live:** [gbanamarket.vercel.app](https://gbanamarket.vercel.app)
 
 ## Features
 
