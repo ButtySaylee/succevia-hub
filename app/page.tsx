@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Script from "next/script";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
 import ItemCard from "@/components/ItemCard";
@@ -7,7 +6,7 @@ import { Listing, CATEGORIES, CATEGORY_ICONS } from "@/types";
 import { ShoppingBag, Search, Plus } from "lucide-react";
 
 interface HomePageProps {
-  searchParams: Promise<{ category?: string; q?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; status?: string }>;
 }
 
 export const metadata: Metadata = {
@@ -31,12 +30,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const selectedCategory = params?.category ?? "All";
   const searchQuery = params?.q ?? "";
+  const statusFilter = params?.status === "available" ? "available" : "all";
 
   let query = supabase
     .from("listings")
     .select("*")
     .eq("is_approved", true)
-    .eq("is_sold", false)
+    .order("is_sold", { ascending: true })
     .order("created_at", { ascending: false });
 
   if (selectedCategory !== "All") {
@@ -46,6 +46,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const { data: listings, error } = await query;
 
   const filtered: Listing[] = (listings ?? []).filter((item: Listing) => {
+    if (statusFilter === "available" && item.is_sold) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     return (
@@ -76,6 +77,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           {/* Search — hidden input preserves the active category */}
           <form method="GET" className="max-w-lg mx-auto relative">
             <input type="hidden" name="category" value={selectedCategory} />
+            <input type="hidden" name="status" value={statusFilter} />
             <input
               type="text"
               name="q"
@@ -101,8 +103,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               key={cat}
               href={
                 searchQuery
-                  ? `/?category=${cat}&q=${encodeURIComponent(searchQuery)}`
-                  : `/?category=${cat}`
+                  ? `/?category=${cat}&q=${encodeURIComponent(searchQuery)}&status=${statusFilter}`
+                  : `/?category=${cat}&status=${statusFilter}`
               }
               className={
                 selectedCategory === cat
@@ -147,18 +149,44 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         ) : (
           <>
             <div className="flex items-center justify-between mb-5">
-              <p className="text-slate-600 font-medium text-sm">
-                <span className="font-bold text-[#002147]">{filtered.length}</span>{" "}
-                listing{filtered.length !== 1 ? "s" : ""}{" "}
-                {selectedCategory !== "All"
-                  ? `in ${selectedCategory}`
-                  : "available"}
-                {searchQuery && (
-                  <span className="ml-1 text-slate-400">
-                    for &ldquo;{searchQuery}&rdquo;
-                  </span>
-                )}
-              </p>
+              <div className="flex items-center gap-3">
+                <p className="text-slate-600 font-medium text-sm">
+                  <span className="font-bold text-[#002147]">{filtered.length}</span>{" "}
+                  listing{filtered.length !== 1 ? "s" : ""}{" "}
+                  {selectedCategory !== "All"
+                    ? `in ${selectedCategory}`
+                    : statusFilter === "available"
+                    ? "available"
+                    : "listed"}
+                  {searchQuery && (
+                    <span className="ml-1 text-slate-400">
+                      for &ldquo;{searchQuery}&rdquo;
+                    </span>
+                  )}
+                </p>
+                <div className="flex items-center rounded-full bg-slate-100 p-1">
+                  <a
+                    href={`/?category=${selectedCategory}&q=${encodeURIComponent(searchQuery)}&status=all`}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                      statusFilter === "all"
+                        ? "bg-[#002147] text-white"
+                        : "text-slate-600 hover:text-slate-800"
+                    }`}
+                  >
+                    All
+                  </a>
+                  <a
+                    href={`/?category=${selectedCategory}&q=${encodeURIComponent(searchQuery)}&status=available`}
+                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                      statusFilter === "available"
+                        ? "bg-[#002147] text-white"
+                        : "text-slate-600 hover:text-slate-800"
+                    }`}
+                  >
+                    Available
+                  </a>
+                </div>
+              </div>
               <a
                 href="/sell"
                 className="flex items-center gap-1 text-xs font-semibold text-[#25D366] hover:text-[#1da851] transition-colors"

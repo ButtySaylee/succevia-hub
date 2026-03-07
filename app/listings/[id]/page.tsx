@@ -6,6 +6,7 @@ import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import ShareButton from "@/components/ShareButton";
 import ImageCarousel from "@/components/ImageCarousel";
+import SellerMarkSold from "@/components/SellerMarkSold";
 import { productSchema, breadcrumbSchema } from "@/lib/schema";
 import { MessageCircle, MapPin, Tag, ArrowLeft } from "lucide-react";
 
@@ -170,18 +171,26 @@ export default async function ListingDetailPage({ params }: Props) {
                 This item has been sold
               </div>
             ) : (
-              <div className="flex gap-3">
-                <a
-                  href={waLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white font-semibold py-3 rounded-xl text-sm transition-all shadow"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  Chat with Seller
-                </a>
-                <ShareButton listingId={listing.id} title={listing.title} />
-              </div>
+              <>
+                <div className="flex gap-3">
+                  <a
+                    href={waLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white font-semibold py-3 rounded-xl text-sm transition-all shadow"
+                  >
+                    <MessageCircle className="w-4 h-4" />
+                    Chat with Seller
+                  </a>
+                  <ShareButton listingId={listing.id} title={listing.title} />
+                </div>
+                <SellerMarkSold listingId={listing.id} />
+              </>
+            )}
+            {listing.is_sold && (
+              <p className="text-xs text-slate-400 mt-2 text-center">
+                Sold items remain visible for marketplace history.
+              </p>
             )}
 
             <p className="text-xs text-slate-300 mt-4 text-center">
