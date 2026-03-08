@@ -42,8 +42,12 @@ interface Stats {
   sold: number;
 }
 
+const SESSION_KEY = "gbana_admin_session";
+const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
 export default function AdminPortalPage() {
   const [authed, setAuthed] = useState(false);
+  const [sessionRestored, setSessionRestored] = useState(false);
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -104,6 +108,24 @@ export default function AdminPortalPage() {
     setLoading(false);
   }, []);
 
+  // Restore session from localStorage on first load
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(SESSION_KEY);
+      if (raw) {
+        const { expiry } = JSON.parse(raw);
+        if (expiry > Date.now()) {
+          setAuthed(true);
+        } else {
+          localStorage.removeItem(SESSION_KEY);
+        }
+      }
+    } catch {
+      localStorage.removeItem(SESSION_KEY);
+    }
+    setSessionRestored(true);
+  }, []);
+
   useEffect(() => {
     if (authed) {
       fetchListings(tab);
@@ -138,6 +160,10 @@ export default function AdminPortalPage() {
       });
 
       if (res.ok) {
+        localStorage.setItem(
+          SESSION_KEY,
+          JSON.stringify({ expiry: Date.now() + SESSION_DURATION_MS })
+        );
         setAuthed(true);
         setPwError(false);
       } else {
@@ -148,6 +174,12 @@ export default function AdminPortalPage() {
     } finally {
       setAuthLoading(false);
     }
+  }
+
+  function handleLogout() {
+    localStorage.removeItem(SESSION_KEY);
+    setAuthed(false);
+    setPwInput("");
   }
 
   function openEdit(l: Listing) {
@@ -276,6 +308,15 @@ export default function AdminPortalPage() {
     setActionId(null);
   }
 
+  // ── Session restoring splash ────────────────────────────────────────────────
+  if (!sessionRestored) {
+    return (
+      <main className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-[#25D366]" />
+      </main>
+    );
+  }
+
   // ── Login gate ─────────────────────────────────────────────────────────────
   if (!authed) {
     return (
@@ -337,6 +378,7 @@ export default function AdminPortalPage() {
       <header className="bg-[#002147] px-4 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <h1 className="text-white font-extrabold text-lg">Admin Portal</h1>
+        <div className="flex items-center gap-3">
           <button
             onClick={() => { fetchListings(tab); fetchStats(); }}
             className="flex items-center gap-1 text-xs text-slate-300 hover:text-white transition-colors"
@@ -344,6 +386,14 @@ export default function AdminPortalPage() {
             <RefreshCw className="w-3.5 h-3.5" />
             Refresh
           </button>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Logout
+          </button>
+        </div>
         </div>
       </header>
 

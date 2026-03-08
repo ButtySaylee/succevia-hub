@@ -135,6 +135,42 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         )}
 
+        {/* Filter bar — always visible so users can always switch back to All */}
+        <div className="mb-5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-slate-500">Filter:</span>
+            <div className="flex items-center rounded-full bg-slate-100 p-1">
+              <a
+                href={`/?category=${selectedCategory}&q=${encodeURIComponent(searchQuery)}`}
+                className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                  statusFilter === "all"
+                    ? "bg-[#002147] text-white"
+                    : "text-slate-600 hover:text-slate-800"
+                }`}
+              >
+                All
+              </a>
+              <a
+                href={`/?category=${selectedCategory}&q=${encodeURIComponent(searchQuery)}&status=available`}
+                className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                  statusFilter === "available"
+                    ? "bg-[#002147] text-white"
+                    : "text-slate-600 hover:text-slate-800"
+                }`}
+              >
+                Available
+              </a>
+            </div>
+          </div>
+          <a
+            href="/sell"
+            className="flex items-center gap-1 text-xs font-semibold text-[#25D366] hover:text-[#1da851] transition-colors"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Sell an item
+          </a>
+        </div>
+
         {filtered.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">🛍️</div>
@@ -144,6 +180,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             <p className="text-slate-500 text-sm mb-6">
               {searchQuery
                 ? `No results for "${searchQuery}". Try a different search.`
+                : statusFilter === "available"
+                ? "No available items right now. Switch to \"All\" above to see sold items too."
                 : "Be the first to list an item in this category!"}
             </p>
             <a
@@ -156,53 +194,20 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
         ) : (
           <>
-            <div className="flex items-center justify-between mb-5">
-              <div className="flex items-center gap-3">
-                <p className="text-slate-600 font-medium text-sm">
-                  <span className="font-bold text-[#002147]">{count ?? filtered.length}</span>{" "}
-                  listing{(count ?? filtered.length) !== 1 ? "s" : ""}{" "}
-                  {selectedCategory !== "All"
-                    ? `in ${selectedCategory}`
-                    : statusFilter === "available"
-                    ? "available"
-                    : "listed"}
-                  {searchQuery && (
-                    <span className="ml-1 text-slate-400">
-                      for &ldquo;{searchQuery}&rdquo;
-                    </span>
-                  )}
-                </p>
-                <div className="flex items-center rounded-full bg-slate-100 p-1">
-                  <a
-                    href={`/?category=${selectedCategory}&q=${encodeURIComponent(searchQuery)}&status=all`}
-                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
-                      statusFilter === "all"
-                        ? "bg-[#002147] text-white"
-                        : "text-slate-600 hover:text-slate-800"
-                    }`}
-                  >
-                    All
-                  </a>
-                  <a
-                    href={`/?category=${selectedCategory}&q=${encodeURIComponent(searchQuery)}&status=available`}
-                    className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
-                      statusFilter === "available"
-                        ? "bg-[#002147] text-white"
-                        : "text-slate-600 hover:text-slate-800"
-                    }`}
-                  >
-                    Available
-                  </a>
-                </div>
-              </div>
-              <a
-                href="/sell"
-                className="flex items-center gap-1 text-xs font-semibold text-[#25D366] hover:text-[#1da851] transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Sell an item
-              </a>
-            </div>
+            <p className="text-slate-600 font-medium text-sm mb-5">
+              <span className="font-bold text-[#002147]">{count ?? filtered.length}</span>{" "}
+              listing{(count ?? filtered.length) !== 1 ? "s" : ""}{" "}
+              {selectedCategory !== "All"
+                ? `in ${selectedCategory}`
+                : statusFilter === "available"
+                ? "available"
+                : "listed"}
+              {searchQuery && (
+                <span className="ml-1 text-slate-400">
+                  for &ldquo;{searchQuery}&rdquo;
+                </span>
+              )}
+            </p>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filtered.map((listing) => (
@@ -210,14 +215,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               ))}
             </div>
 
-              <LoadMore
-                currentPage={currentPage}
-                totalItems={count ?? 0}
-                itemsPerPage={itemsPerPage}
-                category={selectedCategory}
-                searchQuery={searchQuery}
-                statusFilter={statusFilter}
-              />
+            <LoadMore
+              currentPage={currentPage}
+              totalItems={count ?? 0}
+              itemsPerPage={itemsPerPage}
+              category={selectedCategory}
+              searchQuery={searchQuery}
+              statusFilter={statusFilter}
+            />
           </>
         )}
       </section>
