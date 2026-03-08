@@ -16,7 +16,7 @@ create table listings (
   title           text not null,
   description     text not null,
   price           text not null,
-  category        text not null check (category in ('Electronics', 'Vehicles', 'Fashion', 'Property', 'Home')),
+  category        text not null check (category in ('Electronics', 'Vehicles', 'Fashion', 'Property', 'Home', 'Other')),
   image_urls      text[] not null,
   seller_whatsapp text not null,
   seller_pin_hash text not null,

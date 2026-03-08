@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdminRequest } from "@/lib/admin-auth";
 
 export async function DELETE(req: NextRequest) {
+  const authError = verifyAdminRequest(req);
+  if (authError) return authError;
+
   const { id } = await req.json();
   if (!id) {
     return NextResponse.json({ error: "Missing id" }, { status: 400 });

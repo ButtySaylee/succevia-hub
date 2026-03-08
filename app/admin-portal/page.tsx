@@ -48,6 +48,7 @@ const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 export default function AdminPortalPage() {
   const [authed, setAuthed] = useState(false);
   const [sessionRestored, setSessionRestored] = useState(false);
+  const [adminToken, setAdminToken] = useState("");
   const [pwInput, setPwInput] = useState("");
   const [pwError, setPwError] = useState(false);
   const [authLoading, setAuthLoading] = useState(false);
@@ -113,9 +114,10 @@ export default function AdminPortalPage() {
     try {
       const raw = localStorage.getItem(SESSION_KEY);
       if (raw) {
-        const { expiry } = JSON.parse(raw);
+        const { expiry, token } = JSON.parse(raw);
         if (expiry > Date.now()) {
           setAuthed(true);
+          setAdminToken(token ?? "");
         } else {
           localStorage.removeItem(SESSION_KEY);
         }
@@ -160,10 +162,12 @@ export default function AdminPortalPage() {
       });
 
       if (res.ok) {
+        const { token } = await res.json();
         localStorage.setItem(
           SESSION_KEY,
-          JSON.stringify({ expiry: Date.now() + SESSION_DURATION_MS })
+          JSON.stringify({ expiry: Date.now() + SESSION_DURATION_MS, token })
         );
+        setAdminToken(token ?? "");
         setAuthed(true);
         setPwError(false);
       } else {
@@ -179,8 +183,15 @@ export default function AdminPortalPage() {
   function handleLogout() {
     localStorage.removeItem(SESSION_KEY);
     setAuthed(false);
+    setAdminToken("");
     setPwInput("");
   }
+
+  /** Returns the Authorization header for every admin API request. */
+  const authHeader = () => ({
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${adminToken}`,
+  });
 
   function openEdit(l: Listing) {
     setEditId(l.id);
@@ -204,7 +215,7 @@ export default function AdminPortalPage() {
     setActionId(id);
     const res = await fetch("/api/listings/update", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeader(),
       body: JSON.stringify({ id, ...editForm }),
     });
     if (res.ok) {
@@ -223,7 +234,7 @@ export default function AdminPortalPage() {
     setActionId(id);
     const res = await fetch("/api/listings/approve", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeader(),
       body: JSON.stringify({ id }),
     });
     if (res.ok) {
@@ -241,7 +252,7 @@ export default function AdminPortalPage() {
     const ids = Array.from(selectedIds);
     const res = await fetch("/api/listings/bulk-approve", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeader(),
       body: JSON.stringify({ ids }),
     });
     if (res.ok) {
@@ -259,7 +270,7 @@ export default function AdminPortalPage() {
     setActionId(id);
     const res = await fetch("/api/listings/sold", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeader(),
       body: JSON.stringify({ id }),
     });
     if (res.ok) {
@@ -278,7 +289,7 @@ export default function AdminPortalPage() {
     setActionId(id);
     const res = await fetch("/api/listings/relist", {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeader(),
       body: JSON.stringify({ id }),
     });
     if (res.ok) {
@@ -295,7 +306,7 @@ export default function AdminPortalPage() {
     setActionId(id);
     const res = await fetch("/api/listings/reject", {
       method: "DELETE",
-      headers: { "Content-Type": "application/json" },
+      headers: authHeader(),
       body: JSON.stringify({ id }),
     });
     if (res.ok) {
@@ -443,7 +454,7 @@ export default function AdminPortalPage() {
 
       <div className="max-w-6xl mx-auto px-4 py-6">
         {/* PIN Resets Tab */}
-        {tab === "pin-resets" && <PinResetAdmin adminPassword={pwInput} />}
+        {tab === "pin-resets" && <PinResetAdmin adminToken={adminToken} />}
 
         {/* Listings Tabs */}
         {tab !== "pin-resets" && (

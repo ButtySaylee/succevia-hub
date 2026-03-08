@@ -50,7 +50,7 @@ export default function ResetPinPage({ resetToken }: ResetPinPageProps) {
 
       setSuccess(true);
       setTimeout(() => {
-        router.push("/seller");
+        router.push("/dashboard");
       }, 2000);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong");
@@ -70,7 +70,7 @@ export default function ResetPinPage({ resetToken }: ResetPinPageProps) {
             PIN Reset Complete!
           </h1>
           <p className="text-slate-600 text-sm mb-6">
-            Your PIN has been successfully reset. Redirecting to login...
+            Your PIN has been successfully reset. Redirecting to your dashboard...
           </p>
         </div>
       </div>

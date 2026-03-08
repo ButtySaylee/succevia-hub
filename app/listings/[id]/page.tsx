@@ -6,6 +6,7 @@ import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import ShareButton from "@/components/ShareButton";
 import ImageCarousel from "@/components/ImageCarousel";
+import SellerMarkSold from "@/components/SellerMarkSold";
 import { productSchema, breadcrumbSchema } from "@/lib/schema";
 import { MessageCircle, MapPin, Tag, ArrowLeft } from "lucide-react";
 
@@ -187,6 +188,7 @@ export default async function ListingDetailPage({ params }: Props) {
                   </a>
                   <ShareButton listingId={listing.id} title={listing.title} />
                 </div>
+                <SellerMarkSold listingId={listing.id} />
               </>
             )}
             {listing.is_sold && (

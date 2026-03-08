@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { Loader2, CheckCircle2, XCircle, Clock, MessageCircle, Copy } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, Clock, MessageCircle, Copy, Trash2 } from "lucide-react";
 
 interface PinResetRequest {
   id: string;
@@ -16,10 +16,10 @@ interface PinResetRequest {
 }
 
 interface PinResetAdminProps {
-  adminPassword: string;
+  adminToken: string;
 }
 
-export default function PinResetAdmin({ adminPassword }: PinResetAdminProps) {
+export default function PinResetAdmin({ adminToken }: PinResetAdminProps) {
   const [requests, setRequests] = useState<PinResetRequest[]>([]);
   const [loading, setLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
@@ -55,11 +55,13 @@ export default function PinResetAdmin({ adminPassword }: PinResetAdminProps) {
     try {
       const res = await fetch("/api/listings/approve-pin-reset", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
         body: JSON.stringify({
           request_id: requestId,
           action,
-          admin_password: adminPassword,
         }),
       });
 
@@ -69,6 +71,30 @@ export default function PinResetAdmin({ adminPassword }: PinResetAdminProps) {
       showToast(
         `PIN reset request ${action === "approve" ? "approved" : "denied"}`
       );
+      await fetchRequests();
+    } catch (err: unknown) {
+      showToast(err instanceof Error ? err.message : "Something went wrong");
+    } finally {
+      setActionId(null);
+    }
+  }
+
+  async function handleDelete(requestId: string) {
+    setActionId(requestId);
+    try {
+      const res = await fetch("/api/listings/approve-pin-reset", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${adminToken}`,
+        },
+        body: JSON.stringify({ request_id: requestId }),
+      });
+
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(data?.error ?? "Failed to delete request");
+
+      showToast("Request deleted");
       await fetchRequests();
     } catch (err: unknown) {
       showToast(err instanceof Error ? err.message : "Something went wrong");
@@ -200,8 +226,7 @@ export default function PinResetAdmin({ adminPassword }: PinResetAdminProps) {
                   </div>
                 )}
 
-                {req.status === "approved" && (
-                  <div className="ml-4 flex flex-col gap-2">
+                {req.status === "approved" && (                  <div className="ml-4 flex flex-col gap-2">
                     <div className="text-xs font-mono text-slate-500 bg-slate-100 px-3 py-2 rounded-lg max-w-sm">
                       <span className="block text-slate-600 font-semibold mb-1">
                         Reset Link:
@@ -251,6 +276,24 @@ export default function PinResetAdmin({ adminPassword }: PinResetAdminProps) {
                     <p className="text-xs text-slate-400">
                       Click WhatsApp button or copy link to share with seller
                     </p>
+                  </div>
+                )}
+
+                {(req.status === "completed" || req.status === "denied") && (
+                  <div className="ml-4 flex items-start">
+                    <button
+                      onClick={() => handleDelete(req.id)}
+                      disabled={actionId === req.id}
+                      className="flex items-center gap-1 bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-600 font-semibold px-3 py-2 rounded-lg text-xs transition-colors"
+                      title="Delete this request"
+                    >
+                      {actionId === req.id ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Trash2 className="w-3 h-3" />
+                      )}
+                      Delete
+                    </button>
                   </div>
                 )}
               </div>

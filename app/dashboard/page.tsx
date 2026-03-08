@@ -2,10 +2,25 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import Navbar from "@/components/Navbar";
-import ItemCard from "@/components/ItemCard";
+import ForgotPin from "@/components/ForgotPin";
+import SellerEditListing from "@/components/SellerEditListing";
 import { Listing } from "@/types";
-import { Store, Loader2, AlertCircle, Package, Eye } from "lucide-react";
+import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
+import {
+  Store,
+  Loader2,
+  AlertCircle,
+  Package,
+  Eye,
+  CheckCircle2,
+  Pencil,
+  RefreshCw,
+  RotateCcw,
+  PlusCircle,
+} from "lucide-react";
 
 export default function SellerDashboard() {
   const router = useRouter();
@@ -13,22 +28,28 @@ export default function SellerDashboard() {
   const [sellerPin, setSellerPin] = useState("");
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [authenticated, setAuthenticated] = useState(false);
+  const [activeFilter, setActiveFilter] = useState<"all" | "active" | "pending" | "sold">("all");
+
+  const waClean = whatsapp.replace(/\s/g, "");
+  const pin = sellerPin.trim();
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
 
-    const waClean = whatsapp.replace(/\s/g, "");
     if (!/^\+?[0-9]{7,15}$/.test(waClean)) {
       setError("Enter a valid WhatsApp number with country code (e.g., +231777123456)");
       setLoading(false);
       return;
     }
 
-    if (!/^\d{4,8}$/.test(sellerPin.trim())) {
+    if (!/^\d{4,8}$/.test(pin)) {
       setError("Enter your seller PIN (4-8 digits)");
       setLoading(false);
       return;
@@ -36,7 +57,7 @@ export default function SellerDashboard() {
 
     try {
       const res = await fetch(
-        `/api/listings/seller?seller_whatsapp=${encodeURIComponent(waClean)}&seller_pin=${encodeURIComponent(sellerPin.trim())}`
+        `/api/listings/seller?seller_whatsapp=${encodeURIComponent(waClean)}&seller_pin=${encodeURIComponent(pin)}`
       );
       const payload = (await res.json()) as { listings?: Listing[]; error?: string };
 
@@ -62,16 +83,75 @@ export default function SellerDashboard() {
     setAuthenticated(false);
     setListings([]);
     setWhatsapp("");
+    setSellerPin("");
+    setActiveFilter("all");
+    setMessage(null);
+    setError(null);
+  }
+
+  async function markAsSold(id: string) {
+    setError(null);
+    setMessage(null);
+    setActionLoadingId(id);
+
+    try {
+      const res = await fetch("/api/listings/seller-sold", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, seller_whatsapp: waClean, seller_pin: pin }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to mark listing as sold.");
+
+      setListings((prev) =>
+        prev.map((item) => (item.id === id ? { ...item, is_sold: true } : item))
+      );
+      setMessage("Listing marked as sold.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setActionLoadingId(null);
+    }
+  }
+
+  async function relistItem(id: string) {
+    setError(null);
+    setMessage(null);
+    setActionLoadingId(id);
+
+    try {
+      const res = await fetch("/api/listings/seller-relist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ listing_id: id, seller_whatsapp: waClean, seller_pin: pin }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || "Failed to re-list item.");
+
+      setMessage("Item re-listed successfully! Awaiting admin approval.");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
+    } finally {
+      setActionLoadingId(null);
+    }
   }
 
   const stats = {
     total: listings.length,
-    approved: listings.filter(l => l.is_approved).length,
-    pending: listings.filter(l => !l.is_approved).length,
-    sold: listings.filter(l => l.is_sold).length,
-    active: listings.filter(l => l.is_approved && !l.is_sold).length,
+    approved: listings.filter((l) => l.is_approved).length,
+    pending: listings.filter((l) => !l.is_approved).length,
+    sold: listings.filter((l) => l.is_sold).length,
+    active: listings.filter((l) => l.is_approved && !l.is_sold).length,
   };
 
+  const displayedListings = listings.filter((l) => {
+    if (activeFilter === "active") return l.is_approved && !l.is_sold;
+    if (activeFilter === "pending") return !l.is_approved;
+    if (activeFilter === "sold") return l.is_sold;
+    return true;
+  });
+
+  // ── Login screen ─────────────────────────────────────────────────────────────
   if (!authenticated) {
     return (
       <main className="min-h-screen bg-slate-50">
@@ -100,7 +180,7 @@ export default function SellerDashboard() {
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Enter Your WhatsApp Number
+                  WhatsApp Number
                 </label>
                 <input
                   type="tel"
@@ -111,7 +191,7 @@ export default function SellerDashboard() {
                   required
                 />
                 <p className="text-xs text-slate-400 mt-1">
-                  The same number you used when posting listings
+                  The same number you used when posting your listings
                 </p>
               </div>
 
@@ -131,6 +211,9 @@ export default function SellerDashboard() {
                   className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
                   required
                 />
+                <div className="mt-1">
+                  <ForgotPin sellerWhatsapp={whatsapp} onSuccess={() => setSellerPin("")} />
+                </div>
               </div>
 
               <button
@@ -152,8 +235,8 @@ export default function SellerDashboard() {
             <div className="mt-6 pt-6 border-t border-slate-200">
               <p className="text-xs text-slate-500 text-center">
                 Your WhatsApp number is used only to identify your listings. We
-                never share or store this information beyond matching it with your
-                posts.
+                never share or store this information beyond matching it with
+                your posts.
               </p>
             </div>
           </div>
@@ -162,6 +245,7 @@ export default function SellerDashboard() {
     );
   }
 
+  // ── Dashboard (authenticated) ─────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-slate-50">
       <Navbar />
@@ -170,19 +254,42 @@ export default function SellerDashboard() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-extrabold text-[#002147] mb-1">
-              My Listings
+              Seller Dashboard
             </h1>
             <p className="text-slate-500 text-sm">
-              Manage your items and track performance
+              Manage your listings and track performance
             </p>
           </div>
-          <button
-            onClick={handleLogout}
-            className="text-sm font-semibold text-slate-600 hover:text-[#002147] transition-colors"
-          >
-            Logout
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push("/sell")}
+              className="hidden sm:inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white font-semibold px-4 py-2 rounded-full text-sm transition-all shadow"
+            >
+              <PlusCircle className="w-4 h-4" />
+              Post New Listing
+            </button>
+            <button
+              onClick={handleLogout}
+              className="text-sm font-semibold text-slate-600 hover:text-[#002147] transition-colors"
+            >
+              Logout
+            </button>
+          </div>
         </div>
+
+        {/* Feedback messages */}
+        {error && (
+          <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 mb-5 text-sm">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            {error}
+          </div>
+        )}
+        {message && !error && (
+          <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-3 mb-5 text-sm">
+            <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
+            {message}
+          </div>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
@@ -210,54 +317,187 @@ export default function SellerDashboard() {
           </div>
         </div>
 
-        {/* Status Filter Tabs */}
+        {/* Filter Tabs */}
         <div className="flex gap-2 mb-6 overflow-x-auto">
-          <button className="px-4 py-2 bg-[#002147] text-white rounded-full text-sm font-semibold whitespace-nowrap">
-            All ({stats.total})
-          </button>
-          <button className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full text-sm font-semibold whitespace-nowrap transition-colors">
-            Active ({stats.active})
-          </button>
-          <button className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full text-sm font-semibold whitespace-nowrap transition-colors">
-            Pending ({stats.pending})
-          </button>
-          <button className="px-4 py-2 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-full text-sm font-semibold whitespace-nowrap transition-colors">
-            Sold ({stats.sold})
-          </button>
+          {(["all", "active", "pending", "sold"] as const).map((filter) => {
+            const count = filter === "all" ? stats.total : stats[filter];
+            const label = filter.charAt(0).toUpperCase() + filter.slice(1);
+            return (
+              <button
+                key={filter}
+                onClick={() => setActiveFilter(filter)}
+                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+                  activeFilter === filter
+                    ? "bg-[#002147] text-white"
+                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                }`}
+              >
+                {label} ({count})
+              </button>
+            );
+          })}
         </div>
 
-        {/* Listings Grid */}
-        {listings.length === 0 ? (
+        {/* Listings */}
+        {displayedListings.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-6xl mb-4">📦</div>
             <h2 className="text-xl font-bold text-slate-700 mb-2">
-              No listings yet
+              {listings.length === 0
+                ? "No listings yet"
+                : `No ${activeFilter} listings`}
             </h2>
             <p className="text-slate-500 text-sm mb-6">
-              Start selling by posting your first item!
+              {listings.length === 0
+                ? "Start selling by posting your first item!"
+                : `You have no listings in the "${activeFilter}" tab.`}
             </p>
-            <button
-              onClick={() => router.push("/sell")}
-              className="inline-flex items-center gap-2 bg-[#25D366] text-white font-semibold px-6 py-3 rounded-full shadow hover:bg-[#1da851] transition-all"
-            >
-              Post a Listing
-            </button>
+            {listings.length === 0 && (
+              <button
+                onClick={() => router.push("/sell")}
+                className="inline-flex items-center gap-2 bg-[#25D366] text-white font-semibold px-6 py-3 rounded-full shadow hover:bg-[#1da851] transition-all"
+              >
+                Post a Listing
+              </button>
+            )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-            {listings.map((listing) => (
-              <div key={listing.id} className="relative">
-                <ItemCard listing={listing} />
-                {!listing.is_approved && (
-                  <div className="absolute top-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg z-10">
-                    Pending Review
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            {displayedListings.map((listing) => (
+              <article
+                key={listing.id}
+                className="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100"
+              >
+                {/* Image */}
+                <div className="relative h-44 bg-slate-100">
+                  <Image
+                    src={optimizeCloudinaryUrl(listing.image_urls?.[0] ?? "", 800)}
+                    alt={listing.title}
+                    fill
+                    className={`object-cover ${listing.is_sold ? "opacity-60" : ""}`}
+                    sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  />
+                  {listing.is_sold && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="bg-red-500 text-white font-extrabold text-sm px-3 py-1 rounded-lg shadow">
+                        SOLD
+                      </span>
+                    </div>
+                  )}
+                  {!listing.is_approved && (
+                    <div className="absolute top-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                      Pending Review
+                    </div>
+                  )}
+                </div>
+
+                {/* Details */}
+                <div className="p-4">
+                  <h2 className="font-bold text-[#002147] line-clamp-1">
+                    {listing.title}
+                  </h2>
+                  <p className="text-sm text-slate-500 line-clamp-2 mt-1">
+                    {listing.description}
+                  </p>
+                  <div className="mt-2 text-sm font-semibold text-[#25D366]">
+                    {listing.price}
                   </div>
-                )}
-              </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-xs">
+                    <span
+                      className={`px-2 py-1 rounded-full ${
+                        listing.is_approved
+                          ? "bg-emerald-100 text-emerald-700"
+                          : "bg-amber-100 text-amber-700"
+                      }`}
+                    >
+                      {listing.is_approved ? "Approved" : "Pending"}
+                    </span>
+                    <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                      {listing.category}
+                    </span>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="mt-4 flex gap-2">
+                    <Link
+                      href={`/listings/${listing.id}`}
+                      className="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold py-2 rounded-xl transition-colors"
+                    >
+                      View
+                    </Link>
+
+                    {!listing.is_sold && listing.is_approved && (
+                      <button
+                        onClick={() => setEditingId(listing.id)}
+                        disabled={actionLoadingId !== null}
+                        className="flex-1 inline-flex items-center justify-center gap-1 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 text-blue-600 text-sm font-semibold py-2 rounded-xl transition-colors"
+                        title="Edit listing details"
+                      >
+                        <Pencil className="w-4 h-4" />
+                        Edit
+                      </button>
+                    )}
+
+                    {!listing.is_sold ? (
+                      <button
+                        onClick={() => markAsSold(listing.id)}
+                        disabled={
+                          !listing.is_approved || actionLoadingId === listing.id
+                        }
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#002147] hover:bg-[#003580] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2 rounded-xl transition-colors"
+                        title="Mark this item as sold"
+                      >
+                        {actionLoadingId === listing.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <RefreshCw className="w-4 h-4" />
+                            Mark Sold
+                          </>
+                        )}
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => relistItem(listing.id)}
+                        disabled={actionLoadingId === listing.id}
+                        className="flex-1 inline-flex items-center justify-center gap-1 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 text-amber-600 text-sm font-semibold py-2 rounded-xl transition-colors"
+                        title="Re-list this item"
+                      >
+                        {actionLoadingId === listing.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <>
+                            <RotateCcw className="w-4 h-4" />
+                            Re-list
+                          </>
+                        )}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </article>
             ))}
           </div>
         )}
       </div>
+
+      {/* Edit Listing Modal */}
+      {editingId && (
+        <SellerEditListing
+          listing={listings.find((l) => l.id === editingId)!}
+          sellerWhatsapp={waClean}
+          sellerPin={pin}
+          onSuccess={(updated) => {
+            setListings((prev) =>
+              prev.map((l) => (l.id === updated.id ? updated : l))
+            );
+            setEditingId(null);
+            setMessage("Listing updated successfully!");
+          }}
+          onCancel={() => setEditingId(null)}
+        />
+      )}
     </main>
   );
 }

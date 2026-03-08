@@ -69,9 +69,9 @@ export function productSchema(
     created_at: string;
   }
 ) {
-  // Extract numeric price for schema (simplified)
   const priceMatch = listing.price.match(/[\d.]+/);
   const numericPrice = priceMatch ? priceMatch[0] : "0";
+  const currency = listing.price.toUpperCase().includes("USD") ? "USD" : "LRD";
 
   return {
     "@context": "https://schema.org",
@@ -79,13 +79,17 @@ export function productSchema(
     name: listing.title,
     description: listing.description,
     image: listing.image_urls,
-    price: numericPrice,
-    priceCurrency: listing.price.includes("USD") ? "USD" : "LRD",
-    availability: listing.is_sold
-      ? "https://schema.org/OutOfStock"
-      : "https://schema.org/InStock",
     category: listing.category,
     datePublished: listing.created_at,
     url: `https://gbanamarket.vercel.app/listings/${listing.id}`,
+    offers: {
+      "@type": "Offer",
+      price: numericPrice,
+      priceCurrency: currency,
+      availability: listing.is_sold
+        ? "https://schema.org/OutOfStock"
+        : "https://schema.org/InStock",
+      url: `https://gbanamarket.vercel.app/listings/${listing.id}`,
+    },
   };
 }

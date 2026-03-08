@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { supabase } from "@/lib/supabase";
 import Navbar from "@/components/Navbar";
-import ItemCard from "@/components/ItemCard";
-import LoadMore from "@/components/LoadMore";
+import ListingsGrid from "@/components/ListingsGrid";
 import { Listing, CATEGORIES, CATEGORY_ICONS } from "@/types";
 import { ShoppingBag, Search, Plus } from "lucide-react";
 
 interface HomePageProps {
-  searchParams: Promise<{ category?: string; q?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ category?: string; q?: string; status?: string }>;
 }
 
 export const metadata: Metadata = {
@@ -32,11 +31,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const selectedCategory = params?.category ?? "All";
   const searchQuery = params?.q ?? "";
   const statusFilter = params?.status === "available" ? "available" : "all";
-  const parsedPage = Number.parseInt(params?.page ?? "1", 10);
-  const currentPage = Number.isNaN(parsedPage) || parsedPage < 1 ? 1 : parsedPage;
   const itemsPerPage = 30;
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage - 1;
 
   let query = supabase
     .from("listings")
@@ -47,7 +42,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     .eq("is_approved", true)
     .order("is_sold", { ascending: true })
     .order("created_at", { ascending: false })
-    .range(startIndex, endIndex);
+    .range(0, itemsPerPage - 1);
 
   if (selectedCategory !== "All") {
     query = query.eq("category", selectedCategory);
@@ -209,14 +204,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               )}
             </p>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-              {filtered.map((listing) => (
-                <ItemCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-
-            <LoadMore
-              currentPage={currentPage}
+            <ListingsGrid
+              initialListings={filtered}
               totalItems={count ?? 0}
               itemsPerPage={itemsPerPage}
               category={selectedCategory}

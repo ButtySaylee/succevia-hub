@@ -1,50 +1,36 @@
-import { createClient } from "@supabase/supabase-js";
-import { hashSellerPin } from "@/lib/seller-auth";
-
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+import { supabaseAdmin } from "@/lib/supabase";
+import { hashSellerPin, normalizeWhatsapp } from "@/lib/seller-auth";
 
 export async function POST(req: Request) {
   try {
     const { listing_id, seller_whatsapp, seller_pin } = await req.json();
 
-    // Validate inputs
     if (!listing_id || !seller_whatsapp || !seller_pin) {
-      return Response.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
+      return Response.json({ error: "Missing required fields" }, { status: 400 });
     }
 
+    // Normalize before comparing so "+231 777 123" matches "+231777123"
+    const normalizedWa = normalizeWhatsapp(seller_whatsapp);
     const pinHash = hashSellerPin(seller_pin);
 
-    // Fetch original listing
     const { data: original, error: fetchError } = await supabaseAdmin
       .from("listings")
-      .select(
-        "id, title, description, price, category, image_urls, seller_whatsapp, seller_pin_hash, is_negotiable, location"
-      )
+      .select("id, title, description, price, category, image_urls, seller_whatsapp, seller_pin_hash, is_negotiable, location")
       .eq("id", listing_id)
       .single();
 
     if (fetchError || !original) {
-      return Response.json(
-        { error: "Original listing not found" },
-        { status: 404 }
-      );
+      return Response.json({ error: "Original listing not found" }, { status: 404 });
     }
 
-    // Check authorization
-    if (original.seller_whatsapp !== seller_whatsapp || original.seller_pin_hash !== pinHash) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 403 }
-      );
+    // Normalize stored value too before comparing
+    if (
+      normalizeWhatsapp(original.seller_whatsapp) !== normalizedWa ||
+      original.seller_pin_hash !== pinHash
+    ) {
+      return Response.json({ error: "Unauthorized" }, { status: 403 });
     }
 
-    // Create new listing (copy of original)
     const { data: newListing, error: createError } = await supabaseAdmin
       .from("listings")
       .insert({
@@ -57,7 +43,7 @@ export async function POST(req: Request) {
         seller_pin_hash: original.seller_pin_hash,
         is_negotiable: original.is_negotiable,
         location: original.location,
-        is_approved: false, // Re-listed items need re-approval
+        is_approved: false,
         is_sold: false,
       })
       .select()
@@ -65,24 +51,15 @@ export async function POST(req: Request) {
 
     if (createError || !newListing) {
       console.error("Re-list create error:", createError);
-      return Response.json(
-        { error: "Failed to re-list item" },
-        { status: 500 }
-      );
+      return Response.json({ error: "Failed to re-list item" }, { status: 500 });
     }
 
     return Response.json(
-      {
-        message: "Item re-listed successfully. Awaiting admin approval.",
-        listing: newListing,
-      },
+      { message: "Item re-listed successfully. Awaiting admin approval.", listing: newListing },
       { status: 201 }
     );
   } catch (error: unknown) {
     console.error("Re-list error:", error);
-    return Response.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return Response.json({ error: "Internal server error" }, { status: 500 });
   }
 }

@@ -1,27 +1,45 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { verifyAdminRequest } from "@/lib/admin-auth";
 
 interface ApprovePinResetPayload {
   request_id: string;
   action: "approve" | "deny";
-  admin_password?: string;
+}
+
+export async function DELETE(req: NextRequest) {
+  const authError = verifyAdminRequest(req);
+  if (authError) return authError;
+
+  const { request_id } = (await req.json()) as { request_id: string };
+
+  if (!request_id) {
+    return NextResponse.json({ error: "Missing request_id" }, { status: 400 });
+  }
+
+  const { error } = await supabaseAdmin
+    .from("pin_reset_requests")
+    .delete()
+    .eq("id", request_id)
+    .in("status", ["completed", "denied"]);
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true });
 }
 
 export async function POST(req: NextRequest) {
-  const { request_id, action, admin_password } = (await req.json()) as ApprovePinResetPayload;
+  const authError = verifyAdminRequest(req);
+  if (authError) return authError;
+
+  const { request_id, action } = (await req.json()) as ApprovePinResetPayload;
 
   if (!request_id || !action || !["approve", "deny"].includes(action)) {
     return NextResponse.json(
       { error: "Missing or invalid request_id or action" },
       { status: 400 }
-    );
-  }
-
-  // Verify admin password
-  if (admin_password !== process.env.ADMIN_PASSWORD) {
-    return NextResponse.json(
-      { error: "Unauthorized: Invalid admin password" },
-      { status: 401 }
     );
   }
 
@@ -40,8 +58,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({
-    ok: true,
-    message: `Pin reset request ${newStatus}`,
-  });
+  return NextResponse.json({ ok: true, message: `Pin reset request ${newStatus}` });
 }
