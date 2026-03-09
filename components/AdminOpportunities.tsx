@@ -20,6 +20,8 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+type OpportunityFilter = "all" | "job" | "scholarship";
+
 interface AdminOpportunitiesProps {
   adminToken: string;
 }
@@ -54,6 +56,7 @@ interface OppStats {
 
 export default function AdminOpportunities({ adminToken }: AdminOpportunitiesProps) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
+  const [filter, setFilter] = useState<OpportunityFilter>("all");
   const [loading, setLoading] = useState(false);
   const [actionId, setActionId] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -305,6 +308,24 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
         </div>
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex gap-2 mb-6 bg-slate-100 p-1 rounded-xl w-fit">
+        {(['all', 'job', 'scholarship'] as const).map((f) => (
+          <button
+            key={f}
+            onClick={() => setFilter(f)}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+              filter === f
+                ? 'bg-white text-[#002147] shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {f === 'job' ? <Briefcase className="w-3.5 h-3.5" /> : f === 'scholarship' ? <GraduationCap className="w-3.5 h-3.5" /> : null}
+            {f === 'all' ? 'All Opportunities' : f === 'job' ? 'Jobs' : 'Scholarships'}
+          </button>
+        ))}
+      </div>
+
       {/* Create / Edit Form */}
       {showForm && (
         <div className="bg-white rounded-2xl shadow-md p-5 mb-6 border border-slate-200">
@@ -487,16 +508,35 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
           <p className="text-slate-400 text-sm mt-1">Post a job or scholarship opportunity above.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {opportunities.map((opp) => {
-            const busy = actionId === opp.id;
+        <div>
+          {(() => {
+            const filtered = filter === 'all' ? opportunities : opportunities.filter(o => o.type === filter);
+            
+            if (filtered.length === 0) {
+              return (
+                <div className="text-center py-20">
+                  {filter === 'job' ? <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-3" /> : <GraduationCap className="w-12 h-12 text-slate-300 mx-auto mb-3" />}
+                  <h2 className="text-lg font-bold text-slate-700">
+                    No {filter === 'job' ? 'jobs' : 'scholarships'} yet
+                  </h2>
+                  <p className="text-slate-400 text-sm mt-1">
+                    Start by posting a {filter === 'job' ? 'job' : 'scholarship'} opportunity.
+                  </p>
+                </div>
+              );
+            }
+            
             return (
-              <div
-                key={opp.id}
-                className={`bg-white rounded-2xl shadow-md overflow-hidden flex flex-col transition-all ${
-                  !opp.is_active ? "opacity-60" : ""
-                }`}
-              >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                {filtered.map((opp) => {
+                  const busy = actionId === opp.id;
+                  return (
+                    <div
+                      key={opp.id}
+                      className={`bg-white rounded-2xl shadow-md overflow-hidden flex flex-col transition-all ${
+                        !opp.is_active ? "opacity-60" : ""
+                      }`}
+                    >
                 <div className="relative h-40 bg-slate-100">
                   <Image src={opp.image_url} alt={opp.title} fill className="object-cover" />
                   <span
@@ -566,8 +606,11 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
                   </div>
                 </div>
               </div>
+                  );
+                })}
+              </div>
             );
-          })}
+          })()}
         </div>
       )}
     </div>
