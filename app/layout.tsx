@@ -12,6 +12,7 @@ const geistSans = Geist({
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://gbanamarket.vercel.app"),
+  manifest: "/manifest.webmanifest",
   title: "GbanaMarket – Buy and Sell Products Online",
   description:
     "GbanaMarket is an online marketplace where users can buy and sell products easily. Shop trusted sellers in Liberia.",
@@ -69,6 +70,18 @@ export const metadata: Metadata = {
   },
   verification: {
     google: process.env.GOOGLE_SITE_VERIFICATION,
+  },
+  icons: {
+    icon: [
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "GbanaMarket",
   },
   other: {
     "apple-mobile-web-app-capable": "yes",
