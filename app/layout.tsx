@@ -79,6 +79,7 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: "/favicon.png", type: "image/png" },
       { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
       { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
@@ -105,6 +106,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+        {/* Viewport Meta Tag for Mobile Responsiveness */}
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+
         {/* Structured Data - Organization */}
         <Script
           id="organization-schema"

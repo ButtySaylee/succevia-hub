@@ -157,26 +157,34 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       </section>
 
       {/* Category Tabs */}
-      <section className="bg-white shadow-lg sticky top-[65px] z-40 overflow-x-auto border-b border-slate-100">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex gap-2">
-          {CATEGORIES.map((cat) => (
-            <a
-              key={cat}
-              href={
-                searchQuery || selectedCountry !== "All"
-                  ? `/?category=${cat}&q=${encodeURIComponent(searchQuery)}&status=${statusFilter}&country=${selectedCountry}`
-                  : `/?category=${cat}&status=${statusFilter}`
-              }
-              className={
-                selectedCategory === cat
-                  ? "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold whitespace-nowrap bg-gradient-to-r from-[#002147] to-[#003580] text-white shadow-lg transform hover:scale-105 transition-all duration-200"
-                  : "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold whitespace-nowrap bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-all duration-200 hover:scale-105 hover:shadow-md"
-              }
-            >
-              <span className="text-lg">{CATEGORY_ICONS[cat]}</span>
-              {cat}
-            </a>
-          ))}
+      <section className="bg-white shadow-lg sticky top-[65px] z-40 border-b border-slate-100 relative">
+        {/* Left fade indicator */}
+        <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none md:hidden"></div>
+
+        {/* Right fade indicator */}
+        <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none md:hidden"></div>
+
+        <div className="max-w-6xl mx-auto px-4 py-3 overflow-x-auto scroll-snap-x scrollbar-hide">
+          <div className="flex gap-2 min-w-max">
+            {CATEGORIES.map((cat) => (
+              <a
+                key={cat}
+                href={
+                  searchQuery || selectedCountry !== "All"
+                    ? `/?category=${cat}&q=${encodeURIComponent(searchQuery)}&status=${statusFilter}&country=${selectedCountry}`
+                    : `/?category=${cat}&status=${statusFilter}`
+                }
+                className={`${
+                  selectedCategory === cat
+                    ? "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-bold whitespace-nowrap bg-gradient-to-r from-[#002147] to-[#003580] text-white shadow-lg transform hover:scale-105 transition-all duration-200 scroll-snap-center touch-feedback min-h-[44px]"
+                    : "flex items-center gap-2 px-6 py-3 rounded-full text-sm font-semibold whitespace-nowrap bg-slate-50 hover:bg-slate-100 text-slate-700 hover:text-slate-900 transition-all duration-200 hover:scale-105 hover:shadow-md scroll-snap-center touch-feedback min-h-[44px]"
+                }`}
+              >
+                <span className="text-lg">{CATEGORY_ICONS[cat]}</span>
+                {cat}
+              </a>
+            ))}
+          </div>
         </div>
       </section>
 
