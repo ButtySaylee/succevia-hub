@@ -43,7 +43,7 @@ export async function POST(req: Request) {
         seller_pin_hash: original.seller_pin_hash,
         is_negotiable: original.is_negotiable,
         location: original.location,
-        is_approved: false,
+        is_approved: true, // Auto-approve re-listed items
         is_sold: false,
       })
       .select()
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     }
 
     return Response.json(
-      { message: "Item re-listed successfully. Awaiting admin approval.", listing: newListing },
+      { message: "Item re-listed successfully and is now live!", listing: newListing },
       { status: 201 }
     );
   } catch (error: unknown) {

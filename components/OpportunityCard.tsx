@@ -43,13 +43,19 @@ export default function OpportunityCard({ opportunity, isNew }: OpportunityCardP
       <Link href={`/opportunities/${opportunity.id}`} className="flex flex-col flex-1">
         {/* Image */}
         <div className="relative w-full h-48 bg-slate-100 overflow-hidden">
-          <Image
-            src={optimizeCloudinaryUrl(opportunity.image_url, 800)}
-            alt={opportunity.title}
-            fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-          />
+          {opportunity.image_url && opportunity.image_url.trim() ? (
+            <Image
+              src={optimizeCloudinaryUrl(opportunity.image_url, 800)}
+              alt={opportunity.title}
+              fill
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          ) : (
+            <div className="flex items-center justify-center w-full h-full bg-gradient-to-br from-slate-100 to-slate-200">
+              <Building2 className="w-16 h-16 text-slate-400" />
+            </div>
+          )}
           {/* Type badge */}
           <span
             className={`absolute top-2 left-2 text-xs font-semibold px-2 py-1 rounded-full ${

@@ -4,23 +4,23 @@ export function organizationSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
-    name: "GbanaMarket",
-    url: "https://gbanamarket.vercel.app",
-    logo: "https://gbanamarket.vercel.app/logo.svg",
+    name: "Succevia Hub",
+    url: "https://succeviahub.vercel.app",
+    logo: "https://succeviahub.vercel.app/logo.svg",
     sameAs: [
-      "https://www.facebook.com/gbanamarket",
-      "https://www.instagram.com/gbanamarket",
+      "https://www.facebook.com/succeviahub",
+      "https://www.instagram.com/succeviahub",
     ],
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "Customer Service",
-      areaServed: "LR",
+      areaServed: "Worldwide",
       availableLanguage: "en",
     },
     description:
-      "GbanaMarket is an online marketplace where users can buy and sell products easily in Liberia.",
+      "Succevia Hub is the world's trusted platform for jobs, scholarships, and buying & selling items safely.",
     foundingDate: "2024",
-    areaServed: "LR",
+    areaServed: "Worldwide",
   };
 }
 
@@ -28,14 +28,14 @@ export function websiteSchema() {
   return {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    name: "GbanaMarket",
-    url: "https://gbanamarket.vercel.app",
+    name: "Succevia Hub",
+    url: "https://succeviahub.vercel.app",
     potentialAction: {
       "@type": "SearchAction",
       target: {
         "@type": "EntryPoint",
         urlTemplate:
-          "https://gbanamarket.vercel.app/?q={search_term_string}",
+          "https://succeviahub.vercel.app/?q={search_term_string}",
       },
       query_input: "required name=search_term_string",
     },
@@ -61,7 +61,7 @@ export function productSchema(
   listing: {
     id: string;
     title: string;
-    description: string;
+    description?: string; // Made optional
     price: string;
     image_urls: string[];
     is_sold: boolean;
@@ -77,11 +77,11 @@ export function productSchema(
     "@context": "https://schema.org",
     "@type": "Product",
     name: listing.title,
-    description: listing.description,
+    description: listing.description || listing.title, // Fallback to title if no description
     image: listing.image_urls,
     category: listing.category,
     datePublished: listing.created_at,
-    url: `https://gbanamarket.vercel.app/listings/${listing.id}`,
+    url: `https://succeviahub.vercel.app/listings/${listing.id}`,
     offers: {
       "@type": "Offer",
       price: numericPrice,
@@ -89,7 +89,7 @@ export function productSchema(
       availability: listing.is_sold
         ? "https://schema.org/OutOfStock"
         : "https://schema.org/InStock",
-      url: `https://gbanamarket.vercel.app/listings/${listing.id}`,
+      url: `https://succeviahub.vercel.app/listings/${listing.id}`,
     },
   };
 }

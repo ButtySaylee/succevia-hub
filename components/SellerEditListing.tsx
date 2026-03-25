@@ -22,7 +22,7 @@ export default function SellerEditListing({
   onCancel,
 }: SellerEditListingProps) {
   const [title, setTitle] = useState(listing.title);
-  const [description, setDescription] = useState(listing.description);
+  const [description, setDescription] = useState(listing.description || "");
   const [price, setPrice] = useState(listing.price);
   const [category, setCategory] = useState(listing.category);
   const [loading, setLoading] = useState(false);
@@ -33,10 +33,6 @@ export default function SellerEditListing({
 
     if (!title.trim()) {
       setError("Title is required");
-      return;
-    }
-    if (!description.trim()) {
-      setError("Description is required");
       return;
     }
     if (!price.trim()) {
@@ -54,7 +50,7 @@ export default function SellerEditListing({
           seller_whatsapp: sellerWhatsapp,
           seller_pin: sellerPin,
           title: title.trim(),
-          description: description.trim(),
+          description: description.trim() || null,
           price: price.trim(),
           category,
         }),

@@ -2,7 +2,7 @@ export interface Listing {
   id: string;
   created_at: string;
   title: string;
-  description: string;
+  description?: string; // Made optional
   price: string;
   category: string;
   image_urls: string[];
@@ -20,7 +20,6 @@ export type Category =
   | "Vehicles"
   | "Fashion"
   | "Property"
-  | "Home"
   | "Other";
 
 export const CATEGORIES: Category[] = [
@@ -29,7 +28,6 @@ export const CATEGORIES: Category[] = [
   "Vehicles",
   "Fashion",
   "Property",
-  "Home",
   "Other",
 ];
 
@@ -39,7 +37,6 @@ export const CATEGORY_ICONS: Record<Category, string> = {
   Vehicles: "🚗",
   Fashion: "👗",
   Property: "🏠",
-  Home: "🛋️",
   Other: "📦",
 };
 
@@ -67,18 +64,71 @@ export const OPPORTUNITY_TYPE_LABELS: Record<OpportunityType, string> = {
   scholarship: "Scholarship",
 };
 
-export const LIBERIA_LOCATIONS = [
-  "Monrovia",
-  "Paynesville",
-  "Buchanan",
-  "Gbarnga",
-  "Kakata",
-  "Voinjama",
-  "Zwedru",
-  "Harper",
-  "Tubmanburg",
-  "Greenville",
-  "Sanniquellie",
-  "Harbel",
+export type Country = (typeof GLOBAL_COUNTRIES)[number];
+
+export const GLOBAL_COUNTRIES = [
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Argentina",
+  "Australia",
+  "Austria",
+  "Bangladesh",
+  "Belgium",
+  "Brazil",
+  "Canada",
+  "Chile",
+  "China",
+  "Colombia",
+  "Denmark",
+  "Egypt",
+  "Ethiopia",
+  "Finland",
+  "France",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Japan",
+  "Jordan",
+  "Kenya",
+  "Lebanon",
+  "Liberia",
+  "Malaysia",
+  "Mexico",
+  "Morocco",
+  "Netherlands",
+  "New Zealand",
+  "Nigeria",
+  "Norway",
+  "Pakistan",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Russia",
+  "Saudi Arabia",
+  "Senegal",
+  "Sierra Leone",
+  "Singapore",
+  "South Africa",
+  "South Korea",
+  "Spain",
+  "Sri Lanka",
+  "Sweden",
+  "Switzerland",
+  "Thailand",
+  "Turkey",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+  "United States",
+  "Vietnam",
   "Other",
 ] as const;

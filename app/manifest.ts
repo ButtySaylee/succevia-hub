@@ -2,10 +2,10 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "GbanaMarket",
-    short_name: "GbanaMarket",
+    name: "Succevia Hub",
+    short_name: "Succevia Hub",
     description:
-      "GbanaMarket is a modern online marketplace where users can buy and sell products, discover job opportunities, and find scholarships.",
+      "Succevia Hub is Liberia's trusted platform for jobs, scholarships, and buying & selling items safely via WhatsApp.",
     start_url: "/",
     scope: "/",
     display: "standalone",
@@ -16,7 +16,7 @@ export default function manifest(): MetadataRoute.Manifest {
     theme_color: "#2563eb",
     lang: "en",
     categories: ["business", "shopping", "social"],
-    id: "com.gbanamarket.app",
+    id: "com.succeviahub.app",
     icons: [
       {
         src: "/icons/icon-192.png",
@@ -41,14 +41,14 @@ export default function manifest(): MetadataRoute.Manifest {
         sizes: "1280x720",
         type: "image/png",
         form_factor: "wide",
-        label: "GbanaMarket homepage on desktop",
+        label: "Succevia Hub homepage on desktop",
       },
       {
         src: "/screenshots/home-mobile.png",
         sizes: "390x844",
         type: "image/png",
         form_factor: "narrow",
-        label: "GbanaMarket homepage on mobile",
+        label: "Succevia Hub homepage on mobile",
       },
       {
         src: "/screenshots/opportunities-mobile.png",

@@ -2,6 +2,6 @@
   <rect width="260" height="60" rx="8" fill="#002147"/>
   <circle cx="30" cy="30" r="22" fill="#25D366"/>
   <path d="M22 30a8 8 0 1 1 8 8H22v-4h8a4 4 0 1 0-4-4v8" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none"/>
-  <text x="62" y="40" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="#ffffff">Gbana</text>
-  <text x="148" y="40" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="#25D366">Market</text>
+  <text x="62" y="40" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="#ffffff">Succevia</text>
+  <text x="180" y="40" font-family="system-ui,-apple-system,sans-serif" font-size="26" font-weight="700" fill="#25D366">Hub</text>
 </svg>

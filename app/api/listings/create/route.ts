@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
   const waClean = normalizeWhatsapp(String(body.seller_whatsapp ?? ""));
   const pin = normalizePin(String(body.seller_pin ?? ""));
 
-  if (!title || !description || !price || !category || !location) {
+  if (!title || !price || !category || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
 
   const { error } = await supabaseAdmin.from("listings").insert({
     title,
-    description,
+    description: description || null, // Handle optional description
     price,
     category,
     image_urls: imageUrls,
@@ -78,6 +78,7 @@ export async function POST(req: NextRequest) {
     seller_pin_hash: sellerPinHash,
     location,
     is_negotiable: Boolean(body.is_negotiable),
+    is_approved: true, // Auto-approve all listings
   });
 
   if (error) {

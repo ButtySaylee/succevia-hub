@@ -11,18 +11,18 @@ interface OpportunitiesPageProps {
 }
 
 export const metadata: Metadata = {
-  title: "Browse Opportunities – GbanaMarket",
+  title: "Browse Opportunities – Succevia Hub",
   description:
-    "Discover job and scholarship opportunities posted by GbanaMarket. Apply today and take the next step in your career or education.",
+    "Discover job and scholarship opportunities posted by Succevia Hub. Apply today and take the next step in your career or education.",
   keywords: [
     "jobs in liberia",
     "scholarships liberia",
-    "gbanamarket opportunities",
+    "succevia hub opportunities",
     "monrovia jobs",
     "liberia scholarship",
   ],
   alternates: {
-    canonical: "https://gbanamarket.vercel.app/opportunities",
+    canonical: "https://succeviahub.vercel.app/opportunities",
   },
 };
 

@@ -13,49 +13,53 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://gbanamarket.vercel.app"),
+  metadataBase: new URL("https://succeviahub.vercel.app"),
   manifest: "/manifest.webmanifest",
-  title: "GbanaMarket – Buy and Sell Products Online",
+  title: "Succevia Hub – Global Jobs, Scholarships & Marketplace",
   description:
-    "GbanaMarket is an online marketplace where users can buy and sell products easily. Shop trusted sellers in Liberia.",
+    "The world's trusted hub for jobs, scholarships, and buying & selling items safely via WhatsApp.",
   keywords: [
-    "gbanas market",
-    "online marketplace",
-    "buy and sell",
-    "liberia marketplace",
-    "monrovia shopping",
-    "classified ads",
+    "succevia hub",
+    "global jobs",
+    "international scholarships",
+    "worldwide marketplace",
+    "buy and sell globally",
+    "international trading",
+    "global commerce",
+    "classified ads worldwide",
     "whatsapp marketplace",
-    "mobile money",
+    "global e-commerce",
+    "international opportunities",
+    "worldwide trading platform",
   ],
   authors: [{ name: "Butty Saylee" }],
   alternates: {
-    canonical: "https://gbanamarket.vercel.app",
+    canonical: "https://succeviahub.vercel.app",
   },
   openGraph: {
-    title: "GbanaMarket – Buy and Sell Products Online",
+    title: "Succevia Hub - Global Marketplace",
     description:
-      "GbanaMarket is an online marketplace where users can buy and sell products easily.",
-    url: "https://gbanamarket.vercel.app",
-    siteName: "GbanaMarket",
+      "The world's trusted hub for jobs, scholarships, and global commerce.",
+    url: "https://succeviahub.vercel.app",
+    siteName: "Succevia Hub",
     type: "website",
     locale: "en_US",
     images: [
       {
-        url: "https://gbanamarket.vercel.app/og-image.png",
+        url: "https://succeviahub.vercel.app/og-image.png",
         width: 1200,
         height: 630,
-        alt: "GbanaMarket - Online Marketplace",
+        alt: "Succevia Hub - Global Jobs, Scholarships & Marketplace",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    site: "@gbanamarket",
-    creator: "@gbanamarket",
-    title: "GbanaMarket – Buy and Sell Products Online",
+    site: "@succeviahub",
+    creator: "@succeviahub",
+    title: "Succevia Hub - Global Marketplace",
     description:
-      "GbanaMarket is an online marketplace where users can buy and sell products easily.",
+      "The world's trusted hub for jobs, scholarships, and global commerce.",
   },
   robots: {
     index: true,
@@ -83,7 +87,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "GbanaMarket",
+    title: "Succevia Hub",
   },
   other: {
     "apple-mobile-web-app-capable": "yes",

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import imageCompression from "browser-image-compression";
 import { supabase } from "@/lib/supabase";
-import { Opportunity, OPPORTUNITY_TYPES, LIBERIA_LOCATIONS } from "@/types";
+import { Opportunity, OPPORTUNITY_TYPES, GLOBAL_COUNTRIES } from "@/types";
 import {
   Plus,
   Trash2,
@@ -42,7 +42,7 @@ const defaultForm: OppForm = {
   description: "",
   type: "job",
   organization: "",
-  location: "Monrovia",
+  location: "United States",
   deadline: "",
   requirements: "",
   application_url: "",
@@ -400,8 +400,8 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
                 onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
                 className="border border-slate-300 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] bg-white"
               >
-                {LIBERIA_LOCATIONS.map((loc) => (
-                  <option key={loc} value={loc}>{loc}</option>
+                {GLOBAL_COUNTRIES.map((country) => (
+                  <option key={country} value={country}>{country}</option>
                 ))}
               </select>
 

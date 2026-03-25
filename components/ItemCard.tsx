@@ -25,7 +25,7 @@ export default function ItemCard({ listing, isNew }: ItemCardProps) {
   const [copied, setCopied] = useState(false);
 
   const waMessage = encodeURIComponent(
-    `Hello, I saw your ${listing.title} on Gbana Market. Is it still available?`
+    `Hello, I saw your ${listing.title} on Succevia Hub. Is it still available?`
   );
   const waLink = `https://wa.me/${listing.seller_whatsapp}?text=${waMessage}`;
 

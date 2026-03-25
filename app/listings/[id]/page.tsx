@@ -41,14 +41,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 
   return {
-    title: `${listing.title} | GbanaMarket`,
+    title: `${listing.title} | Succevia Hub`,
     description: listing.description.substring(0, 160),
     keywords: [listing.title, listing.category, listing.location],
     openGraph: {
       title: listing.title,
       description: listing.description,
       type: "website",
-      url: `https://gbanamarket.vercel.app/listings/${listing.id}`,
+      url: `https://succeviahub.vercel.app/listings/${listing.id}`,
       images: [
         {
           url: listing.image_urls[0],
@@ -82,19 +82,19 @@ export default async function ListingDetailPage({ params }: Props) {
   if (!listing) notFound();
 
   const waMessage = encodeURIComponent(
-    `Hello, I saw your ${listing.title} on Gbana Market. Is it still available?`
+    `Hello, I saw your ${listing.title} on Succevia Hub. Is it still available?`
   );
   const waLink = `https://wa.me/${listing.seller_whatsapp}?text=${waMessage}`;
 
   // Structured data
   const productData = productSchema(listing);
   const breadcrumbData = breadcrumbSchema([
-    { name: "Home", url: "https://gbanamarket.vercel.app" },
+    { name: "Home", url: "https://succeviahub.vercel.app" },
     {
       name: listing.category,
-      url: `https://gbanamarket.vercel.app/?category=${listing.category}`,
+      url: `https://succeviahub.vercel.app/?category=${listing.category}`,
     },
-    { name: listing.title, url: `https://gbanamarket.vercel.app/listings/${listing.id}` },
+    { name: listing.title, url: `https://succeviahub.vercel.app/listings/${listing.id}` },
   ]);
 
   return (

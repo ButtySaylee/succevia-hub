@@ -44,7 +44,7 @@ interface Stats {
   sold: number;
 }
 
-const SESSION_KEY = "gbana_admin_session";
+const SESSION_KEY = "succevia_admin_session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
 export default function AdminPortalPage() {
@@ -143,7 +143,7 @@ export default function AdminPortalPage() {
         const matchesSearch =
           !searchQuery ||
           l.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          l.description.toLowerCase().includes(searchQuery.toLowerCase());
+          (l.description && l.description.toLowerCase().includes(searchQuery.toLowerCase()));
         const matchesCat =
           filterCategory === "All" || l.category === filterCategory;
         return matchesSearch && matchesCat;
@@ -199,7 +199,7 @@ export default function AdminPortalPage() {
     setEditId(l.id);
     setEditForm({
       title: l.title,
-      description: l.description,
+      description: l.description || "",
       price: l.price,
       category: l.category,
     });
@@ -342,7 +342,7 @@ export default function AdminPortalPage() {
             Admin Portal
           </h1>
           <p className="text-slate-500 text-sm mb-6">
-            Gbana Market — Staff only
+            Succevia Hub — Staff only
           </p>
           <form onSubmit={handleLogin} className="space-y-4">
             <input

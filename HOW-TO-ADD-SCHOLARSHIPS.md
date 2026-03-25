@@ -1,4 +1,4 @@
-# How to Add Scholarships to GbanaMarket
+# How to Add Scholarships to Succevia Hub
 
 This guide explains how to add the fully funded scholarship opportunities for Liberian students to your platform.
 
@@ -6,7 +6,7 @@ This guide explains how to add the fully funded scholarship opportunities for Li
 
 1. **Open your Supabase project dashboard**
    - Go to [supabase.com](https://supabase.com)
-   - Navigate to your GbanaMarket project
+   - Navigate to your Succevia Hub project
 
 2. **Open the SQL Editor**
    - Click on "SQL Editor" in the left sidebar
@@ -22,7 +22,7 @@ This guide explains how to add the fully funded scholarship opportunities for Li
    - You should see a success message: "Successfully added 12 fully funded scholarship opportunities for Liberian students!"
 
 5. **Verify the scholarships were added**
-   - Navigate to your Opportunities page: https://gbanamarket.vercel.app/opportunities
+   - Navigate to your Opportunities page: https://succeviahub.vercel.app/opportunities
    - You should see all 12 scholarships listed
    - Or check in Supabase Table Editor → opportunities table
 
@@ -31,7 +31,7 @@ This guide explains how to add the fully funded scholarship opportunities for Li
 If you prefer to add scholarships one by one through the admin interface:
 
 1. **Access Admin Portal**
-   - Go to https://gbanamarket.vercel.app/admin-portal
+   - Go to https://succeviahub.vercel.app/admin-portal
    - Enter your admin password
 
 2. **Add Each Scholarship**

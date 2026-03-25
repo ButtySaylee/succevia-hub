@@ -12,6 +12,7 @@ interface ListingsGridProps {
   category: string;
   searchQuery: string;
   statusFilter: string;
+  country: string;
 }
 
 export default function ListingsGrid({
@@ -21,6 +22,7 @@ export default function ListingsGrid({
   category,
   searchQuery,
   statusFilter,
+  country,
 }: ListingsGridProps) {
   const [listings, setListings] = useState<Listing[]>(initialListings);
   const [page, setPage] = useState(1);
@@ -40,6 +42,7 @@ export default function ListingsGrid({
     if (category !== "All") params.set("category", category);
     if (searchQuery) params.set("q", searchQuery);
     if (statusFilter !== "all") params.set("status", statusFilter);
+    if (country !== "All") params.set("country", country);
 
     try {
       const res = await fetch(`/api/listings/paginate?${params}`);

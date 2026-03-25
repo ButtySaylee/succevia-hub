@@ -97,7 +97,7 @@ export default function PWAInstallPrompt() {
   return (
     <div className="fixed inset-x-0 bottom-4 z-50 flex justify-center px-4">
       <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-4 shadow-lg">
-        <p className="text-sm font-semibold text-slate-900">Install GbanaMarket</p>
+        <p className="text-sm font-semibold text-slate-900">Install Succevia Hub</p>
         {deferredPrompt ? (
           <p className="mt-1 text-sm text-slate-600">
             Add this app to your phone for faster access and a full-screen experience.

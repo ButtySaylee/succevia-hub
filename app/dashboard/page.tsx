@@ -131,7 +131,7 @@ export default function SellerDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Failed to re-list item.");
 
-      setMessage("Item re-listed successfully! Awaiting admin approval.");
+      setMessage("Item re-listed successfully and is now live!");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
     } finally {

@@ -7,6 +7,7 @@ export async function GET(req: NextRequest) {
   const category = searchParams.get("category") ?? "All";
   const q = searchParams.get("q")?.trim() ?? "";
   const status = searchParams.get("status") ?? "all";
+  const country = searchParams.get("country") ?? "All";
   const itemsPerPage = 30;
   const start = (page - 1) * itemsPerPage;
   const end = start + itemsPerPage - 1;
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
     .range(start, end);
 
   if (category !== "All") query = query.eq("category", category);
+  if (country !== "All") query = query.eq("location", country);
   if (status === "available") query = query.eq("is_sold", false);
   if (q) {
     const escaped = q.replace(/,/g, " ");

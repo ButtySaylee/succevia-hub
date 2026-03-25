@@ -11,7 +11,7 @@ type BeforeInstallPromptEvent = Event & {
 const APK_SHA256 =
   "7495429A802BD29A5C253552F2CAC526A241AD474A3F31B3666BD7D30A7D0A0D";
 
-const GITHUB_RELEASES_URL = "https://github.com/ButtySaylee/gbana-market/releases/download/v1.0.0/GbanaMarket.apk";
+const GITHUB_RELEASES_URL = "https://github.com/ButtySaylee/gbana-market/releases/download/v1.0.0/SucceviaHub.apk";
 
 export default function AndroidInstallOptions() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);

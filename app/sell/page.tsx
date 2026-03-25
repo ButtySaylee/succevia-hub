@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 import Navbar from "@/components/Navbar";
-import { CATEGORIES, Category, LIBERIA_LOCATIONS } from "@/types";
+import { CATEGORIES, Category, GLOBAL_COUNTRIES } from "@/types";
 import { Upload, Loader2, AlertCircle } from "lucide-react";
 
 const SELL_CATEGORIES = CATEGORIES.filter((c) => c !== "All") as Category[];
@@ -21,7 +21,7 @@ export default function SellPage() {
     seller_whatsapp: "",
     seller_pin: "",
     seller_pin_confirm: "",
-    location: "Monrovia",
+    location: "United States",
     is_negotiable: false,
   });
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -135,7 +135,7 @@ export default function SellPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: form.title.trim(),
-          description: form.description.trim(),
+          description: form.description.trim() || null, // Allow empty description
           price: form.price.trim(),
           category: form.category,
           seller_whatsapp: waClean,
@@ -165,8 +165,7 @@ export default function SellPage() {
             Post a Listing
           </h1>
           <p className="text-slate-500 text-sm mb-6">
-            Fill in the details below. Your listing will be reviewed before it
-            goes live.
+            Fill in the details below. Your listing will go live immediately and be visible to buyers worldwide.
           </p>
 
           {error && (
@@ -260,18 +259,20 @@ export default function SellPage() {
             {/* Description */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Description <span className="text-red-500">*</span>
+                Description <span className="text-slate-400">(Optional)</span>
               </label>
               <textarea
                 name="description"
                 value={form.description}
                 onChange={handleChange}
-                required
                 rows={3}
                 maxLength={500}
-                placeholder="Describe the item's condition, age, features..."
+                placeholder="Describe the item's condition, age, features... (optional)"
                 className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] resize-none"
               />
+              <p className="text-xs text-slate-400 mt-1">
+                Adding a description helps buyers understand your item better
+              </p>
             </div>
 
             {/* Price + Category */}
@@ -312,7 +313,7 @@ export default function SellPage() {
             {/* Location */}
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Location <span className="text-red-500">*</span>
+                Country <span className="text-red-500">*</span>
               </label>
               <select
                 name="location"
@@ -320,9 +321,9 @@ export default function SellPage() {
                 onChange={handleChange}
                 className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] bg-white"
               >
-                {LIBERIA_LOCATIONS.map((loc) => (
-                  <option key={loc} value={loc}>
-                    {loc}
+                {GLOBAL_COUNTRIES.map((country) => (
+                  <option key={country} value={country}>
+                    {country}
                   </option>
                 ))}
               </select>
