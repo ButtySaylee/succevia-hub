@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import ListingsGrid from "@/components/ListingsGrid";
 import CountryFilter from "@/components/CountryFilter";
 import { Listing, CATEGORIES, CATEGORY_ICONS, GLOBAL_COUNTRIES } from "@/types";
+import { createButtonClasses } from "@/lib/button-styles";
 import { ShoppingBag, Search, Plus } from "lucide-react";
 
 interface HomePageProps {
@@ -75,7 +76,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
       <Navbar />
 
       {/* Hero Banner */}
-      <section className="bg-gradient-to-br from-[#002147] via-[#003580] to-[#0066cc] text-white py-16 px-4 relative overflow-hidden">
+      <section className="bg-gradient-to-br from-[#002147] via-[#003580] to-[#0066cc] text-white py-12 sm:py-16 px-4 relative overflow-hidden">
         {/* Animated Background Elements */}
         <div className="absolute inset-0 opacity-10">
           <div className="absolute top-20 left-10 w-72 h-72 bg-white rounded-full mix-blend-overlay filter blur-xl animate-pulse"></div>
@@ -84,23 +85,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
 
         <div className="max-w-6xl mx-auto text-center relative z-10">
-          <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-6">
             <div className="p-2 bg-[#25D366] rounded-full animate-bounce">
-              <ShoppingBag className="w-8 h-8 text-white" />
+              <ShoppingBag className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
             </div>
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-white to-slate-100 bg-clip-text text-transparent">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-white to-slate-100 bg-clip-text text-transparent">
               Succevia Hub
             </h1>
           </div>
-          <p className="text-slate-200 text-base sm:text-lg max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-slate-200 text-sm sm:text-base lg:text-lg max-w-2xl mx-auto mb-8 leading-relaxed px-4">
             {"The world's trusted hub for jobs, scholarships, and buying & selling items safely via WhatsApp."}
           </p>
 
           {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8 px-4">
             <a
               href="#listings"
-              className="group inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white font-semibold px-8 py-4 rounded-full shadow-2xl transition-all duration-300 hover:scale-105 hover:shadow-green-500/30 active:scale-95"
+              className={createButtonClasses('primary')}
             >
               <ShoppingBag className="w-5 h-5 group-hover:animate-bounce" />
               Shop Worldwide
@@ -108,7 +109,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </a>
             <a
               href="/sell"
-              className="group inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm hover:bg-white/20 text-white font-semibold px-8 py-4 rounded-full shadow-lg transition-all duration-300 hover:scale-105 border border-white/20 active:scale-95"
+              className={createButtonClasses('secondary')}
             >
               <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
               Sell Globally
@@ -117,7 +118,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
 
           {/* Enhanced Search */}
-          <form method="GET" className="max-w-2xl mx-auto relative group">
+          <form method="GET" className="max-w-2xl mx-auto relative group px-4">
             <input type="hidden" name="category" value={selectedCategory} />
             <input type="hidden" name="status" value={statusFilter} />
             <input type="hidden" name="country" value={selectedCountry} />
@@ -127,22 +128,23 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 name="q"
                 defaultValue={searchQuery}
                 placeholder="Search listings worldwide..."
-                className="w-full pl-6 pr-16 py-4 rounded-2xl bg-white/95 backdrop-blur text-slate-800 text-base shadow-2xl focus:outline-none focus:ring-4 focus:ring-[#25D366]/50 placeholder:text-slate-500 transition-all duration-300 group-hover:shadow-green-500/20"
+                className="w-full pl-4 sm:pl-6 pr-14 sm:pr-16 py-3 sm:py-4 rounded-2xl bg-white/95 backdrop-blur text-slate-800 text-sm sm:text-base shadow-2xl focus:outline-none focus:ring-4 focus:ring-[#25D366]/50 placeholder:text-slate-500 transition-all duration-300 group-hover:shadow-green-500/20"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#25D366] hover:bg-[#1da851] p-3 rounded-xl text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg"
+                className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#25D366] hover:bg-[#1da851] p-2.5 sm:p-3 rounded-xl text-white transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg min-h-[44px] min-w-[44px] flex items-center justify-center"
+                aria-label="Search"
               >
-                <Search className="w-5 h-5" />
+                <Search className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
           </form>
 
           {/* Stats or Features */}
-          <div className="flex flex-wrap justify-center gap-8 mt-12 text-sm">
+          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mt-12 text-sm px-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-[#25D366]">180+</div>
-              <div className="text-slate-300">Countries</div>
+              <div className="text-xl sm:text-2xl font-bold text-[#25D366]">180+</div>
+              <div className="text-slate-300 text-xs sm:text-sm">Countries</div>
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-[#25D366]">Safe</div>

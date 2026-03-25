@@ -19,13 +19,17 @@ export default function Navbar() {
   return (
     <>
       <header className="sticky top-0 z-50 bg-gradient-to-r from-[#002147] to-[#003580] shadow-2xl backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-3 group">
             <div className="transform group-hover:scale-105 transition-transform duration-300">
-              <Logo variant="horizontal" size="lg" priority />
+              <Logo
+                variant="horizontal"
+                size="xl"
+                priority
+              />
             </div>
-            <div className="hidden sm:block text-slate-300 text-[11px] font-medium">
+            <div className="hidden lg:block text-slate-300 text-[11px] font-medium">
               Global Marketplace 🌍
             </div>
           </Link>
@@ -53,14 +57,14 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Navigation */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex md:hidden items-center gap-3">
             {/* Primary CTA - Always visible */}
             <Link
               href="/sell"
-              className="flex items-center gap-2 bg-gradient-to-r from-[#25D366] to-[#1da851] hover:from-[#1da851] hover:to-[#25D366] text-white font-bold px-3 py-3 rounded-full text-sm transition-all duration-300 shadow-lg hover:shadow-green-500/30 hover:scale-105 active:scale-95 min-h-[44px] min-w-[44px] justify-center"
+              className="flex items-center gap-2 bg-gradient-to-r from-[#25D366] to-[#1da851] hover:from-[#1da851] hover:to-[#25D366] text-white font-bold px-4 py-3 rounded-full text-sm transition-all duration-300 shadow-lg hover:shadow-green-500/30 hover:scale-105 active:scale-95 min-h-[44px] min-w-[44px] justify-center"
               title="Sell Globally"
             >
-              <PlusCircle className="w-4 h-4" />
+              <PlusCircle className="w-5 h-5" />
               <span className="hidden sm:inline">Sell</span>
             </Link>
 
@@ -71,7 +75,7 @@ export default function Navbar() {
               aria-label="Open navigation menu"
               aria-expanded={isMobileMenuOpen}
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-6 h-6" />
             </button>
           </div>
         </div>
