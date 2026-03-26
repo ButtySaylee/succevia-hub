@@ -36,7 +36,7 @@ export default function CountryFilter({
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 flex-wrap max-w-full w-full sm:w-auto">
       <span className="text-sm font-semibold text-slate-600">🌍 Country:</span>
       <div className="relative">
         <select
