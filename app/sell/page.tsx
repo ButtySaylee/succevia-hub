@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import imageCompression from "browser-image-compression";
 import Navbar from "@/components/Navbar";
@@ -24,6 +24,33 @@ export default function SellPage() {
     location: "United States",
     is_negotiable: false,
   });
+
+  // Track if seller is already logged in (session)
+  const [sellerSession, setSellerSession] = useState<{
+    seller_whatsapp: string;
+    seller_pin: string;
+  } | null>(null);
+
+  // On mount, check localStorage for seller session
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const session = localStorage.getItem("sellerSession");
+      if (session) {
+        try {
+          const parsed = JSON.parse(session);
+          if (parsed.seller_whatsapp && parsed.seller_pin) {
+            setSellerSession(parsed);
+            setForm((prev) => ({
+              ...prev,
+              seller_whatsapp: parsed.seller_whatsapp,
+              seller_pin: parsed.seller_pin,
+              seller_pin_confirm: parsed.seller_pin, // auto-fill confirm
+            }));
+          }
+        } catch {}
+      }
+    }
+  }, []);
   const [imageFiles, setImageFiles] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -108,21 +135,28 @@ export default function SellPage() {
       return;
     }
 
-    const waClean = form.seller_whatsapp.replace(/\s/g, "");
-    if (!/^\+?[0-9]{7,15}$/.test(waClean)) {
-      setError("Enter a valid WhatsApp number with country code (e.g. +231777123456).");
-      return;
-    }
 
-    const pin = form.seller_pin.trim();
-    if (!/^\d{4,8}$/.test(pin)) {
-      setError("Seller PIN must be 4 to 8 digits.");
-      return;
-    }
+    let waClean = form.seller_whatsapp.replace(/\s/g, "");
+    let pin = form.seller_pin.trim();
 
-    if (pin !== form.seller_pin_confirm.trim()) {
-      setError("PIN confirmation does not match.");
-      return;
+    // If session exists, use stored values
+    if (sellerSession) {
+      waClean = sellerSession.seller_whatsapp;
+      pin = sellerSession.seller_pin;
+    } else {
+      // Validate WhatsApp and PIN only if not logged in
+      if (!/^\+?[0-9]{7,15}$/.test(waClean)) {
+        setError("Enter a valid WhatsApp number with country code (e.g. +231777123456).");
+        return;
+      }
+      if (!/^\d{4,8}$/.test(pin)) {
+        setError("Seller PIN must be 4 to 8 digits.");
+        return;
+      }
+      if (pin !== form.seller_pin_confirm.trim()) {
+        setError("PIN confirmation does not match.");
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -149,6 +183,14 @@ export default function SellPage() {
       const payload = (await res.json()) as { error?: string };
       if (!res.ok) throw new Error(payload.error ?? "Failed to create listing.");
 
+      // Save session if not already saved
+      if (!sellerSession) {
+        localStorage.setItem(
+          "sellerSession",
+          JSON.stringify({ seller_whatsapp: waClean, seller_pin: pin })
+        );
+        setSellerSession({ seller_whatsapp: waClean, seller_pin: pin });
+      }
       router.push(`/sell/success?title=${encodeURIComponent(form.title.trim())}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -329,67 +371,95 @@ export default function SellPage() {
               </select>
             </div>
 
-            {/* WhatsApp */}
-            <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">
-                Your WhatsApp Number <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="tel"
-                name="seller_whatsapp"
-                value={form.seller_whatsapp}
-                onChange={handleChange}
-                required
-                placeholder="+231777123456"
-                className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
-              />
-              <p className="text-xs text-slate-400 mt-1">
-                Buyers will contact you directly on WhatsApp.
-              </p>
-            </div>
-
-            {/* Seller PIN */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">
-                  Seller PIN <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  name="seller_pin"
-                  value={form.seller_pin}
-                  onChange={handleChange}
-                  required
-                  inputMode="numeric"
-                  pattern="[0-9]{4,8}"
-                  minLength={4}
-                  maxLength={8}
-                  placeholder="4-8 digits"
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
-                />
+            {/* WhatsApp & PIN fields: only show if not logged in */}
+            {!sellerSession && (
+              <>
+                {/* WhatsApp */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">
+                    Your WhatsApp Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="seller_whatsapp"
+                    value={form.seller_whatsapp}
+                    onChange={handleChange}
+                    required
+                    placeholder="+231777123456"
+                    className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">
+                    Buyers will contact you directly on WhatsApp.
+                  </p>
+                </div>
+                {/* Seller PIN */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      Seller PIN <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="seller_pin"
+                      value={form.seller_pin}
+                      onChange={handleChange}
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{4,8}"
+                      minLength={4}
+                      maxLength={8}
+                      placeholder="4-8 digits"
+                      className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">
+                      Confirm PIN <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="password"
+                      name="seller_pin_confirm"
+                      value={form.seller_pin_confirm}
+                      onChange={handleChange}
+                      required
+                      inputMode="numeric"
+                      pattern="[0-9]{4,8}"
+                      minLength={4}
+                      maxLength={8}
+                      placeholder="Repeat PIN"
+                      className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-slate-400 -mt-3">
+                  Use this PIN (with your WhatsApp number) to manage or mark your listings as sold.
+                </p>
+              </>
+            )}
+            {/* If logged in, show info and logout option */}
+            {sellerSession && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-xl text-green-700 flex flex-col gap-1">
+                <span>
+                  <b>Logged in as:</b> {sellerSession.seller_whatsapp}
+                </span>
+                <button
+                  type="button"
+                  className="text-xs text-red-600 underline mt-1 w-fit"
+                  onClick={() => {
+                    localStorage.removeItem("sellerSession");
+                    setSellerSession(null);
+                    setForm((prev) => ({
+                      ...prev,
+                      seller_whatsapp: "",
+                      seller_pin: "",
+                      seller_pin_confirm: "",
+                    }));
+                  }}
+                >
+                  Log out / Switch account
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-1">
-                  Confirm PIN <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="password"
-                  name="seller_pin_confirm"
-                  value={form.seller_pin_confirm}
-                  onChange={handleChange}
-                  required
-                  inputMode="numeric"
-                  pattern="[0-9]{4,8}"
-                  minLength={4}
-                  maxLength={8}
-                  placeholder="Repeat PIN"
-                  className="w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
-                />
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 -mt-3">
-              Use this PIN (with your WhatsApp number) to manage or mark your listings as sold.
-            </p>
+            )}
 
             {/* Negotiable */}
             <label className="flex items-center gap-3 cursor-pointer">
