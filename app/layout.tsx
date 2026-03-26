@@ -46,7 +46,7 @@ export const metadata: Metadata = {
     locale: "en_US",
     images: [
       {
-        url: "https://succeviahub.vercel.app/og-image.png",
+        url: "https://succeviahub.vercel.app/logo.png",
         width: 1200,
         height: 630,
         alt: "Succevia Hub - Global Jobs, Scholarships & Marketplace",
@@ -106,6 +106,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
+          {/* Google Site Verification for SEO */}
+          <meta name="google-site-verification" content={process.env.GOOGLE_SITE_VERIFICATION || "google24932f51e7fed1b5"} />
         {/* Viewport Meta Tag for Mobile Responsiveness */}
         <meta name="viewport" content="width=device-width, initial-scale=1" />
 
@@ -127,11 +129,15 @@ export default function RootLayout({
         />
         {/* Preconnect to external domains */}
         <link rel="preconnect" href="https://res.cloudinary.com" />
+        {/* SEO: robots.txt, sitemap.xml, schema.json */}
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        <link rel="alternate" type="application/json" href="/schema.json" />
+        <link rel="robots" href="/robots.txt" />
       </head>
       <body suppressHydrationWarning className={`${geistSans.variable} antialiased min-h-screen bg-slate-50`}>
-          <PWARegister />
-          <PWAInstallPrompt />
-          <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-XXXXXXXXXX"} />
+        <PWARegister />
+        <PWAInstallPrompt />
+        <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-XXXXXXXXXX"} />
         {children}
       </body>
     </html>

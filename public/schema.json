@@ -1,0 +1,11 @@
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "Succevia Hub",
+  "url": "https://succeviahub.vercel.app",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": "https://succeviahub.vercel.app/search?q={search_term_string}",
+    "query-input": "required name=search_term_string"
+  }
+}

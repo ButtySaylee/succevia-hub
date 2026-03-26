@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin-portal
+Sitemap: https://succeviahub.vercel.app/sitemap.xml
+Host: https://succeviahub.vercel.app
