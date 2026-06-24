@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase";
+import { filterExpired } from "@/lib/opportunity-utils";
 import Navbar from "@/components/Navbar";
 import OpportunitiesGrid from "@/components/OpportunitiesGrid";
 import { Opportunity } from "@/types";
@@ -73,6 +74,12 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   }
 
   let opportunities: Opportunity[] = (data ?? []) as Opportunity[];
+
+  // Filter out expired opportunities (deadline has passed)
+  opportunities = filterExpired(opportunities);
+
+  // Use filtered count for display (after removing expired)
+  const filteredCount = opportunities.length;
 
   // Sort by month order (January to December)
   opportunities = opportunities.sort((a, b) => {
@@ -151,9 +158,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       <div className="max-w-6xl mx-auto px-4 py-8">
         {(searchQuery || typeFilter !== "all") && (
           <div className="flex items-center gap-2 mb-4 text-sm text-slate-500">
-            {count != null && (
+            {filteredCount > 0 && (
               <span>
-                <span className="font-bold text-[#002147]">{count}</span> result{count !== 1 ? "s" : ""}
+                <span className="font-bold text-[#002147]">{filteredCount}</span> result{filteredCount !== 1 ? "s" : ""}
               </span>
             )}
             {(searchQuery || typeFilter !== "all") && (
@@ -169,7 +176,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
 
         <OpportunitiesGrid
           initialOpportunities={opportunities}
-          totalItems={count ?? 0}
+          totalItems={filteredCount}
           itemsPerPage={itemsPerPage}
           typeFilter={typeFilter}
           searchQuery={searchQuery}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
+import { filterExpired } from "@/lib/opportunity-utils";
 import { Opportunity } from "@/types";
 
 export async function GET(req: NextRequest) {
@@ -43,6 +44,9 @@ export async function GET(req: NextRequest) {
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   let opportunities: Opportunity[] = (data ?? []) as Opportunity[];
+
+  // Filter out expired opportunities (deadline has passed)
+  opportunities = filterExpired(opportunities);
 
   // Sort by month order (January to December)
   opportunities = opportunities.sort((a, b) => {
