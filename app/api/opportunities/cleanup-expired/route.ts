@@ -1,5 +1,5 @@
 // app/api/opportunities/cleanup-expired/route.ts
-// Cron endpoint to automatically deactivate opportunities past their deadline.
+// Cron endpoint to automatically hide opportunities past their deadline.
 // Call this periodically (e.g., daily via Vercel Cron Jobs or external cron service).
 // Protected with the same admin auth used by other /api/opportunities/* routes.
 
@@ -14,11 +14,25 @@ export async function GET(req: NextRequest) {
     const authError = verifyAdminRequest(req);
     if (authError) return authError;
 
-    // Fetch all active opportunities
-    const { data: opportunities, error: fetchError } = await supabaseAdmin
+    // Fetch all active opportunities, preferring the new visibility flag when available.
+    const visibleQuery = supabaseAdmin
       .from("opportunities")
       .select("id, deadline, title")
-      .eq("is_active", true);
+      .eq("is_active", true)
+      .eq("is_visible", true);
+
+    const visibleResult = await visibleQuery;
+    let opportunities = visibleResult.data;
+    let fetchError = visibleResult.error;
+
+    if (fetchError && /is_visible/i.test(fetchError.message)) {
+      const fallbackResult = await supabaseAdmin
+        .from("opportunities")
+        .select("id, deadline, title")
+        .eq("is_active", true);
+      opportunities = fallbackResult.data;
+      fetchError = fallbackResult.error;
+    }
 
     if (fetchError) {
       console.error("[cleanup-expired] Fetch error:", fetchError.message);
@@ -26,7 +40,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (!opportunities || opportunities.length === 0) {
-      return NextResponse.json({ message: "No active opportunities to check.", deactivated: 0 });
+      return NextResponse.json({ message: "No visible opportunities to check.", hidden: 0 });
     }
 
     const now = new Date();
@@ -43,25 +57,33 @@ export async function GET(req: NextRequest) {
     }
 
     if (expiredIds.length === 0) {
-      return NextResponse.json({ message: "No expired opportunities found.", deactivated: 0 });
+      return NextResponse.json({ message: "No expired opportunities found.", hidden: 0 });
     }
 
-    // Deactivate all expired opportunities
-    const { error: updateError } = await supabaseAdmin
-      .from("opportunities")
-      .update({ is_active: false })
-      .in("id", expiredIds);
+    // Hide all expired opportunities from the public page, or deactivate them when the
+    // visibility column does not exist yet.
+    const updateResult = fetchError && /is_visible/i.test(fetchError.message)
+      ? await supabaseAdmin
+          .from("opportunities")
+          .update({ is_active: false })
+          .in("id", expiredIds)
+      : await supabaseAdmin
+          .from("opportunities")
+          .update({ is_visible: false })
+          .in("id", expiredIds);
+
+    const { error: updateError } = updateResult;
 
     if (updateError) {
       console.error("[cleanup-expired] Update error:", updateError.message);
       return NextResponse.json({ error: updateError.message }, { status: 500 });
     }
 
-    console.log(`[cleanup-expired] Deactivated ${expiredIds.length} expired opportunities.`);
+    console.log(`[cleanup-expired] Hid ${expiredIds.length} expired opportunities.`);
 
     return NextResponse.json({
-      message: `Deactivated ${expiredIds.length} expired opportunities.`,
-      deactivated: expiredIds.length,
+      message: `Hid ${expiredIds.length} expired opportunities.`,
+      hidden: expiredIds.length,
       expiredIds,
     });
   } catch (err) {

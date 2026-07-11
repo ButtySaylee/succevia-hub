@@ -11,7 +11,7 @@ export async function PATCH(req: NextRequest) {
 
   if (!id) return NextResponse.json({ error: "Missing id" }, { status: 400 });
 
-  const updates: Record<string, string | null> = {};
+  const updates: Record<string, string | boolean | null> = {};
 
   if (body.title !== undefined) updates.title = String(body.title).trim();
   if (body.description !== undefined) updates.description = String(body.description).trim();
@@ -21,7 +21,9 @@ export async function PATCH(req: NextRequest) {
   if (body.deadline !== undefined) updates.deadline = String(body.deadline).trim() || null;
   if (body.requirements !== undefined) updates.requirements = String(body.requirements).trim() || null;
   if (body.application_url !== undefined) updates.application_url = String(body.application_url).trim();
-  if (body.image_url !== undefined) updates.image_url = String(body.image_url).trim();
+  if (body.image_url !== undefined) updates.image_url = String(body.image_url).trim() || null;
+  if (body.is_active !== undefined) updates.is_active = Boolean(body.is_active);
+  if (body.is_visible !== undefined) updates.is_visible = Boolean(body.is_visible);
 
   if (Object.keys(updates).length === 0) {
     return NextResponse.json({ error: "No fields to update" }, { status: 400 });

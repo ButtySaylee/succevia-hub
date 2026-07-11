@@ -1,99 +1,154 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronDown, Loader2 } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { AlertCircle, ChevronLeft, ChevronRight } from "lucide-react";
 import OpportunityCard from "@/components/OpportunityCard";
+import { SkeletonOpportunityGrid } from "@/components/SkeletonCard";
 import { Opportunity } from "@/types";
 
 interface OpportunitiesGridProps {
   initialOpportunities: Opportunity[];
   totalItems: number;
   itemsPerPage: number;
-  typeFilter: string;
   searchQuery: string;
+  currentPage: number;
+  totalPages: number;
 }
 
 export default function OpportunitiesGrid({
   initialOpportunities,
   totalItems,
   itemsPerPage,
-  typeFilter,
   searchQuery,
+  currentPage,
+  totalPages,
 }: OpportunitiesGridProps) {
   const [opportunities, setOpportunities] = useState<Opportunity[]>(initialOpportunities);
-  const [page, setPage] = useState(1);
-  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Keep client state aligned with server results when filters/search change.
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialLoading(false), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
   useEffect(() => {
     setOpportunities(initialOpportunities);
-    setPage(1);
-  }, [initialOpportunities, typeFilter, searchQuery, itemsPerPage]);
+    setInitialLoading(false);
+    setError(null);
+  }, [initialOpportunities, searchQuery]);
 
-  const hasMore = opportunities.length < totalItems;
+  const paginationPages = useMemo(() => {
+    const pages = new Set<number>();
+    pages.add(1);
+    pages.add(totalPages);
+    pages.add(currentPage);
+    if (currentPage - 1 >= 1) pages.add(currentPage - 1);
+    if (currentPage + 1 <= totalPages) pages.add(currentPage + 1);
+    return Array.from(pages).filter((page) => page >= 1 && page <= totalPages).sort((a, b) => a - b);
+  }, [currentPage, totalPages]);
 
-  function isNew(createdAt: string): boolean {
-    return Date.now() - new Date(createdAt).getTime() < 24 * 60 * 60 * 1000;
+  function isOpportunityNew(createdAt: string): boolean {
+    return Date.now() - new Date(createdAt).getTime() < 3 * 24 * 60 * 60 * 1000; // 3 days
   }
 
-  async function loadMore() {
-    setLoading(true);
-    const nextPage = page + 1;
+  function buildPageHref(pageNumber: number) {
     const params = new URLSearchParams();
-    params.set("page", nextPage.toString());
-    if (typeFilter !== "all") params.set("type", typeFilter);
     if (searchQuery) params.set("q", searchQuery);
-
-    try {
-      const res = await fetch(`/api/opportunities/list?${params}`);
-      const data = (await res.json()) as { opportunities: Opportunity[] };
-      setOpportunities((prev) => [...prev, ...data.opportunities]);
-      setPage(nextPage);
-    } finally {
-      setLoading(false);
-    }
+    if (pageNumber > 1) params.set("page", String(pageNumber));
+    return `/opportunities${params.toString() ? `?${params.toString()}` : ""}`;
   }
 
-  if (opportunities.length === 0) {
+  if (initialLoading) {
+    return <SkeletonOpportunityGrid count={6} />;
+  }
+
+  if (error && opportunities.length === 0) {
     return (
-      <div className="text-center py-20">
-        <p className="text-2xl mb-2">🔍</p>
-        <h2 className="text-lg font-bold text-slate-700 mb-1">No opportunities found</h2>
-        <p className="text-slate-400 text-sm">Check back soon or try a different filter.</p>
+      <div className="text-center py-16 animate-fade-in">
+        <div className="inline-flex items-center justify-center w-16 h-16 bg-red-50 rounded-full mb-4">
+          <AlertCircle className="w-8 h-8 text-red-500" />
+        </div>
+        <h3 className="text-lg font-semibold text-slate-700 mb-2">Failed to load opportunities</h3>
+        <p className="text-sm text-slate-500 mb-4">{error}</p>
+        <button
+          onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+          className="inline-flex items-center gap-2 bg-[#002147] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-[#003580] transition-colors"
+        >
+          <Loader2 className="w-4 h-4" />
+          Try Again
+        </button>
       </div>
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 stagger-animate">
         {opportunities.map((opp) => (
-          <OpportunityCard key={opp.id} opportunity={opp} isNew={isNew(opp.created_at)} />
+          <OpportunityCard
+            key={opp.id}
+            opportunity={opp}
+            isNew={isOpportunityNew(opp.created_at)}
+          />
         ))}
       </div>
 
-      {hasMore && (
-        <div className="mt-8 text-center">
-          <p className="text-sm text-slate-500 mb-4">
-            Showing {opportunities.length} of {totalItems} opportunities
+      {totalPages > 1 && opportunities.length > 0 && (
+        <div className="mt-8 sm:mt-10 flex flex-col items-center gap-4">
+          <p className="text-xs sm:text-sm text-slate-500">
+            Showing page {currentPage} of {totalPages} · {opportunities.length} scholarships on this page · {totalItems} total
           </p>
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="inline-flex items-center gap-2 bg-white text-[#002147] border-2 border-[#002147] font-semibold px-6 py-3 rounded-full shadow hover:bg-[#002147] hover:text-white transition-all disabled:opacity-60"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              <>
-                <ChevronDown className="w-4 h-4" />
-                Load More
-              </>
-            )}
-          </button>
+
+          <div className="flex items-center gap-2 flex-wrap justify-center">
+            <Link
+              href={buildPageHref(Math.max(1, currentPage - 1))}
+              aria-disabled={currentPage === 1}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-all ${
+                currentPage === 1
+                  ? "pointer-events-none border-slate-200 text-slate-300 bg-white"
+                  : "border-[#002147] text-[#002147] bg-white hover:bg-[#002147] hover:text-white"
+              }`}
+            >
+              <ChevronLeft className="w-4 h-4" />
+              Prev
+            </Link>
+
+            {paginationPages.map((pageNumber, index, array) => {
+              const previousPage = array[index - 1];
+              const gap = previousPage && pageNumber - previousPage > 1;
+              return (
+                <span key={pageNumber} className="flex items-center gap-2">
+                  {gap && <span className="text-slate-400 text-sm">...</span>}
+                  <Link
+                    href={buildPageHref(pageNumber)}
+                    aria-current={pageNumber === currentPage ? "page" : undefined}
+                    className={`min-w-10 h-10 px-3 rounded-full border text-sm font-semibold inline-flex items-center justify-center transition-all ${
+                      pageNumber === currentPage
+                        ? "bg-[#002147] text-white border-[#002147]"
+                        : "bg-white text-[#002147] border-slate-200 hover:border-[#002147] hover:bg-slate-50"
+                    }`}
+                  >
+                    {pageNumber}
+                  </Link>
+                </span>
+              );
+            })}
+
+            <Link
+              href={buildPageHref(Math.min(totalPages, currentPage + 1))}
+              aria-disabled={currentPage === totalPages}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full border text-sm font-semibold transition-all ${
+                currentPage === totalPages
+                  ? "pointer-events-none border-slate-200 text-slate-300 bg-white"
+                  : "border-[#002147] text-[#002147] bg-white hover:bg-[#002147] hover:text-white"
+              }`}
+            >
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </Link>
+          </div>
         </div>
       )}
     </>

@@ -10,8 +10,9 @@ CREATE TABLE opportunities (
   deadline        text,              -- display text only, e.g. "March 30, 2025"
   requirements    text,              -- eligibility / requirements (optional)
   application_url text NOT NULL,     -- external apply link
-  image_url       text NOT NULL,     -- single Cloudinary image URL
-  is_active       boolean NOT NULL DEFAULT true
+  image_url       text,              -- single Cloudinary image URL (optional)
+  is_active       boolean NOT NULL DEFAULT true,
+  is_visible      boolean NOT NULL DEFAULT true
 );
 
 -- Row Level Security: enabled but allow all reads (filtering is done at app layer)

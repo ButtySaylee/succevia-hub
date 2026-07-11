@@ -35,6 +35,8 @@ interface OppForm {
   deadline: string;
   requirements: string;
   application_url: string;
+  is_active: boolean;
+  is_visible: boolean;
 }
 
 const defaultForm: OppForm = {
@@ -46,12 +48,14 @@ const defaultForm: OppForm = {
   deadline: "",
   requirements: "",
   application_url: "",
+  is_active: true,
+  is_visible: true,
 };
 
 interface OppStats {
   total: number;
   active: number;
-  inactive: number;
+  visible: number;
 }
 
 export default function AdminOpportunities({ adminToken }: AdminOpportunitiesProps) {
@@ -68,7 +72,7 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
-  const [stats, setStats] = useState<OppStats>({ total: 0, active: 0, inactive: 0 });
+  const [stats, setStats] = useState<OppStats>({ total: 0, active: 0, visible: 0 });
   const fileRef = useRef<HTMLInputElement>(null);
 
   const showToast = (msg: string) => {
@@ -92,12 +96,12 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
   }, []);
 
   const fetchStats = useCallback(async () => {
-    const [{ count: total }, { count: active }, { count: inactive }] = await Promise.all([
+    const [{ count: total }, { count: active }, { count: visible }] = await Promise.all([
       supabase.from("opportunities").select("*", { count: "exact", head: true }),
       supabase.from("opportunities").select("*", { count: "exact", head: true }).eq("is_active", true),
-      supabase.from("opportunities").select("*", { count: "exact", head: true }).eq("is_active", false),
+      supabase.from("opportunities").select("*", { count: "exact", head: true }).eq("is_visible", true),
     ]);
-    setStats({ total: total ?? 0, active: active ?? 0, inactive: inactive ?? 0 });
+    setStats({ total: total ?? 0, active: active ?? 0, visible: visible ?? 0 });
   }, []);
 
   useEffect(() => {
@@ -158,6 +162,8 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
       deadline: opp.deadline ?? "",
       requirements: opp.requirements ?? "",
       application_url: opp.application_url,
+      is_active: opp.is_active,
+      is_visible: opp.is_visible,
     });
     setImageFile(null);
     setImagePreview(opp.image_url);
@@ -184,14 +190,9 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
       return;
     }
 
-    if (!editId && !imageFile) {
-      setFormError("Please select an image.");
-      return;
-    }
-
     setSubmitting(true);
     try {
-      let image_url = imagePreview ?? "";
+      let image_url = imagePreview ?? null;
 
       if (imageFile) {
         setUploading(true);
@@ -247,6 +248,25 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
     setActionId(null);
   }
 
+  async function toggleVisibility(opp: Opportunity) {
+    setActionId(opp.id);
+    const res = await fetch("/api/opportunities/toggle-visibility", {
+      method: "PATCH",
+      headers: authHeader(),
+      body: JSON.stringify({ id: opp.id, is_visible: !opp.is_visible }),
+    });
+    if (res.ok) {
+      setOpportunities((prev) =>
+        prev.map((o) => (o.id === opp.id ? { ...o, is_visible: !opp.is_visible } : o))
+      );
+      showToast(opp.is_visible ? "Opportunity hidden from the public." : "Opportunity made visible.");
+      fetchStats();
+    } else {
+      showToast("Action failed. Try again.");
+    }
+    setActionId(null);
+  }
+
   async function deleteOpportunity(id: string) {
     if (!confirm("Delete this opportunity? This cannot be undone.")) return;
     setActionId(id);
@@ -278,7 +298,7 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
         {[
           { label: "Total", value: stats.total, color: "text-[#002147]" },
           { label: "Active", value: stats.active, color: "text-[#25D366]" },
-          { label: "Inactive", value: stats.inactive, color: "text-slate-400" },
+          { label: "Visible", value: stats.visible, color: "text-slate-400" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-white rounded-xl p-3 shadow-sm text-center">
             <p className="text-xs text-slate-400 font-medium">{label}</p>
@@ -538,13 +558,29 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
                       }`}
                     >
                 <div className="relative h-40 bg-slate-100">
-                  <Image src={opp.image_url} alt={opp.title} fill className="object-cover" />
+                  {opp.image_url ? (
+                    <Image src={opp.image_url} alt={opp.title} fill className="object-cover" />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                      <div className="text-center">
+                        <Briefcase className="w-10 h-10 text-slate-300 mx-auto mb-2" />
+                        <p className="text-xs text-slate-400">{opp.organization}</p>
+                      </div>
+                    </div>
+                  )}
                   <span
                     className={`absolute top-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
                       opp.is_active ? "bg-[#25D366] text-white" : "bg-slate-400 text-white"
                     }`}
                   >
                     {opp.is_active ? "Active" : "Inactive"}
+                  </span>
+                  <span
+                    className={`absolute bottom-2 left-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
+                      opp.is_visible ? "bg-[#002147] text-white" : "bg-amber-500 text-white"
+                    }`}
+                  >
+                    {opp.is_visible ? "Public" : "Hidden"}
                   </span>
                   <span
                     className={`absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide ${
@@ -568,7 +604,7 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
                     {new Date(opp.created_at).toLocaleString()}
                   </p>
 
-                  <div className="grid grid-cols-3 gap-1.5 mt-1">
+                  <div className="grid grid-cols-4 gap-1.5 mt-1">
                     <button
                       onClick={() => openEdit(opp)}
                       disabled={busy}
@@ -578,11 +614,29 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
                       Edit
                     </button>
                     <button
+                      onClick={() => toggleVisibility(opp)}
+                      disabled={busy}
+                      className={`flex items-center justify-center gap-1 disabled:opacity-50 text-xs font-semibold py-2 rounded-xl transition-all ${
+                        opp.is_visible
+                          ? "bg-amber-50 hover:bg-amber-100 text-amber-600"
+                          : "bg-green-50 hover:bg-green-100 text-green-600"
+                      }`}
+                    >
+                      {busy ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : opp.is_visible ? (
+                        <EyeOff className="w-3 h-3" />
+                      ) : (
+                        <Eye className="w-3 h-3" />
+                      )}
+                      {opp.is_visible ? "Hide" : "Show"}
+                    </button>
+                    <button
                       onClick={() => toggleActive(opp)}
                       disabled={busy}
                       className={`flex items-center justify-center gap-1 disabled:opacity-50 text-xs font-semibold py-2 rounded-xl transition-all ${
                         opp.is_active
-                          ? "bg-amber-50 hover:bg-amber-100 text-amber-600"
+                          ? "bg-blue-50 hover:bg-blue-100 text-blue-600"
                           : "bg-green-50 hover:bg-green-100 text-green-600"
                       }`}
                     >
@@ -593,7 +647,7 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
                       ) : (
                         <Eye className="w-3 h-3" />
                       )}
-                      {opp.is_active ? "Hide" : "Show"}
+                      {opp.is_active ? "Disable" : "Enable"}
                     </button>
                     <button
                       onClick={() => deleteOpportunity(opp.id)}

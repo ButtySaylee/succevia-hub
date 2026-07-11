@@ -27,14 +27,14 @@ export async function generateMetadata({
   const { id } = await params;
   const { data } = await supabaseAdmin
     .from("opportunities")
-    .select("title, description, organization, image_url")
+    .select("title, description, organization, image_url, is_active, is_visible")
     .eq("id", id)
     .single();
 
-  if (!data) return { title: "Opportunity – GbanaMarket" };
+  if (!data) return { title: "Opportunity – Succevia Hub" };
 
   return {
-    title: `${data.title} – ${data.organization} | GbanaMarket`,
+    title: `${data.title} – ${data.organization} | Succevia Hub`,
     description: data.description.slice(0, 160),
     openGraph: {
       images: data.image_url ? [{ url: data.image_url }] : [],
@@ -53,7 +53,7 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
 
   const opportunity = data as Opportunity | null;
 
-  if (!opportunity || !opportunity.is_active) {
+  if (!opportunity || !opportunity.is_active || !opportunity.is_visible) {
     notFound();
   }
 
@@ -81,14 +81,23 @@ export default async function OpportunityDetailPage({ params }: OpportunityDetai
         <div className="bg-white rounded-2xl shadow-md overflow-hidden">
           {/* Hero image */}
           <div className="relative w-full h-64 sm:h-80 bg-slate-100">
-            <Image
-              src={optimizeCloudinaryUrl(opportunity.image_url, 1200)}
-              alt={opportunity.title}
-              fill
-              className="object-cover"
-              priority
-              sizes="(max-width: 768px) 100vw, 768px"
-            />
+            {opportunity.image_url ? (
+              <Image
+                src={optimizeCloudinaryUrl(opportunity.image_url, 1200)}
+                alt={opportunity.title}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 768px"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+                <div className="text-center">
+                  <Building2 className="w-12 h-12 text-slate-300 mx-auto mb-2" />
+                  <p className="text-sm text-slate-400">{opportunity.organization}</p>
+                </div>
+              </div>
+            )}
             <span
               className={`absolute top-4 left-4 flex items-center gap-1.5 text-sm font-semibold px-3 py-1.5 rounded-full shadow ${typeBadgeClass}`}
             >

@@ -12,6 +12,8 @@ interface CreateOpportunityPayload {
   requirements?: unknown;
   application_url?: unknown;
   image_url?: unknown;
+  is_active?: unknown;
+  is_visible?: unknown;
 }
 
 export async function POST(req: NextRequest) {
@@ -28,9 +30,11 @@ export async function POST(req: NextRequest) {
   const deadline = String(body.deadline ?? "").trim() || null;
   const requirements = String(body.requirements ?? "").trim() || null;
   const application_url = String(body.application_url ?? "").trim();
-  const image_url = String(body.image_url ?? "").trim();
+  const image_url = String(body.image_url ?? "").trim() || null;
+  const is_active = body.is_active === undefined ? true : Boolean(body.is_active);
+  const is_visible = body.is_visible === undefined ? true : Boolean(body.is_visible);
 
-  if (!title || !description || !organization || !location || !application_url || !image_url) {
+  if (!title || !description || !organization || !location || !application_url) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
@@ -48,6 +52,8 @@ export async function POST(req: NextRequest) {
     requirements,
     application_url,
     image_url,
+    is_active,
+    is_visible,
   });
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
