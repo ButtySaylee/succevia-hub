@@ -1,5 +1,5 @@
 -- ============================================================
--- Gbana Market – Supabase Schema
+-- Succevia Hub – Supabase Schema
 -- Run this in your Supabase SQL Editor
 -- ============================================================
 

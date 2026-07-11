@@ -32,11 +32,11 @@ export default async function SellSuccessPage({ searchParams }: Props) {
           </div>
 
           <Link
-            href="/"
+            href="/marketplace"
             className="flex items-center justify-center gap-2 w-full bg-[#25D366] hover:bg-[#1da851] text-white font-semibold py-3 rounded-xl text-sm transition-all shadow mb-3"
           >
             <Home className="w-4 h-4" />
-            View Your Live Listing
+            Browse Marketplace
           </Link>
 
           <Link

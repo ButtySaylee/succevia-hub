@@ -5,6 +5,7 @@ import { organizationSchema, websiteSchema } from "@/lib/schema";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import PWARegister from "@/components/PWARegister";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
+import BackToTop from "@/components/BackToTop";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -139,6 +140,7 @@ export default function RootLayout({
         <PWAInstallPrompt />
         <GoogleAnalytics measurementId={process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-XXXXXXXXXX"} />
         {children}
+        <BackToTop />
       </body>
     </html>
   );

@@ -6,6 +6,8 @@ import Script from "next/script";
 import Navbar from "@/components/Navbar";
 import ShareButton from "@/components/ShareButton";
 import ImageCarousel from "@/components/ImageCarousel";
+import SellerEditOnDetail from "@/components/SellerEditOnDetail";
+import SellerMarkSold from "@/components/SellerMarkSold";
 import { productSchema, breadcrumbSchema } from "@/lib/schema";
 import { MessageCircle, MapPin, Tag, ArrowLeft } from "lucide-react";
 
@@ -203,6 +205,23 @@ export default async function ListingDetailPage({ params }: Props) {
                 day: "numeric",
               })}
             </p>
+
+            {/* Seller Tools — only show for non-sold items */}
+            {!listing.is_sold && (
+              <div className="mt-6 pt-6 border-t border-slate-100">
+                <p className="text-xs text-slate-400 text-center mb-3 font-medium">
+                  Are you the seller? Manage your listing:
+                </p>
+                <SellerEditOnDetail
+                  listingId={listing.id}
+                  currentTitle={listing.title}
+                  currentDescription={listing.description ?? ""}
+                  currentPrice={listing.price}
+                  currentCategory={listing.category}
+                />
+                <SellerMarkSold listingId={listing.id} />
+              </div>
+            )}
           </div>
         </div>
       </div>

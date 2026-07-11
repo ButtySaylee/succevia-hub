@@ -7,8 +7,8 @@ interface ResetPinPageProps {
 }
 
 export const metadata = {
-  title: "Reset Your PIN | GbanaMarket",
-  description: "Reset your seller PIN to regain access to your listings",
+  title: "Reset Your PIN | Succevia Hub",
+  description: "Reset your seller PIN to regain access to your listings on Succevia Hub",
 };
 
 export default async function ResetPinPageRoute({ searchParams }: ResetPinPageProps) {

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import ForgotPin from "@/components/ForgotPin";
 import SellerEditListing from "@/components/SellerEditListing";
+import { SkeletonDashboardStats, SkeletonListingGrid } from "@/components/SkeletonCard";
 import { Listing } from "@/types";
 import { optimizeCloudinaryUrl } from "@/lib/cloudinary";
 import {
@@ -21,6 +22,12 @@ import {
   RotateCcw,
   PlusCircle,
   Trash2,
+  TrendingUp,
+  Clock,
+  CheckCircle,
+  XCircle,
+  LogOut,
+  Shield,
 } from "lucide-react";
 
 export default function SellerDashboard() {
@@ -29,6 +36,7 @@ export default function SellerDashboard() {
   const [sellerPin, setSellerPin] = useState("");
   const [listings, setListings] = useState<Listing[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -39,6 +47,11 @@ export default function SellerDashboard() {
 
   const waClean = whatsapp.replace(/\s/g, "");
   const pin = sellerPin.trim();
+
+  useEffect(() => {
+    const timer = setTimeout(() => setInitialLoading(false), 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -178,16 +191,24 @@ export default function SellerDashboard() {
     return true;
   });
 
-  // ── Login screen ─────────────────────────────────────────────────────────────
+  const statCards = [
+    { label: "Total", value: stats.total, icon: Package, color: "text-slate-600", bg: "bg-slate-50" },
+    { label: "Active", value: stats.active, icon: Eye, color: "text-green-600", bg: "bg-green-50" },
+    { label: "Pending", value: stats.pending, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
+    { label: "Sold", value: stats.sold, icon: CheckCircle, color: "text-red-600", bg: "bg-red-50" },
+    { label: "Approved", value: stats.approved, icon: TrendingUp, color: "text-blue-600", bg: "bg-blue-50" },
+  ];
+
+  // ── Login screen ──
   if (!authenticated) {
     return (
-      <main className="min-h-screen bg-slate-50">
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
         <Navbar />
-        <div className="max-w-md mx-auto px-4 py-16">
-          <div className="bg-white rounded-2xl shadow-lg p-8">
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-[#002147] rounded-full mb-3">
-                <Store className="w-8 h-8 text-white" />
+        <div className="max-w-md mx-auto px-4 py-12 sm:py-16">
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-6 sm:p-8 animate-fade-in">
+            <div className="text-center mb-8">
+              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#002147] to-[#003580] rounded-2xl mb-4 shadow-lg">
+                <Store className="w-10 h-10 text-white" />
               </div>
               <h1 className="text-2xl font-extrabold text-[#002147] mb-1">
                 Seller Dashboard
@@ -198,15 +219,15 @@ export default function SellerDashboard() {
             </div>
 
             {error && (
-              <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 mb-5 text-sm">
+              <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 mb-5 text-sm animate-slide-down">
                 <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
                 {error}
               </div>
             )}
 
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   WhatsApp Number
                 </label>
                 <input
@@ -214,16 +235,17 @@ export default function SellerDashboard() {
                   value={whatsapp}
                   onChange={(e) => setWhatsapp(e.target.value)}
                   placeholder="+231777123456"
-                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:border-transparent transition-all"
                   required
+                  autoComplete="tel"
                 />
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-slate-400 mt-1.5">
                   The same number you used when posting your listings
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                <label className="block text-sm font-semibold text-slate-700 mb-1.5">
                   Seller PIN
                 </label>
                 <input
@@ -235,10 +257,11 @@ export default function SellerDashboard() {
                   pattern="[0-9]{4,8}"
                   minLength={4}
                   maxLength={8}
-                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366]"
+                  className="w-full border border-slate-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#25D366] focus:border-transparent transition-all"
                   required
+                  autoComplete="off"
                 />
-                <div className="mt-1">
+                <div className="mt-1.5">
                   <ForgotPin sellerWhatsapp={whatsapp} onSuccess={() => setSellerPin("")} />
                 </div>
               </div>
@@ -246,7 +269,7 @@ export default function SellerDashboard() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-2 bg-[#25D366] hover:bg-[#1da851] disabled:opacity-60 text-white font-semibold py-3 rounded-xl text-sm transition-all shadow active:scale-95"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-[#25D366] to-[#1da851] hover:from-[#1da851] hover:to-[#25D366] disabled:opacity-60 text-white font-semibold py-3.5 rounded-xl text-sm transition-all shadow-lg hover:shadow-green-500/30 active:scale-95"
               >
                 {loading ? (
                   <>
@@ -254,17 +277,19 @@ export default function SellerDashboard() {
                     Loading...
                   </>
                 ) : (
-                  "View My Listings"
+                  <>
+                    <Eye className="w-4 h-4" />
+                    View My Listings
+                  </>
                 )}
               </button>
             </form>
 
-            <div className="mt-6 pt-6 border-t border-slate-200">
-              <p className="text-xs text-slate-500 text-center">
-                Your WhatsApp number is used only to identify your listings. We
-                never share or store this information beyond matching it with
-                your posts.
-              </p>
+            <div className="mt-8 pt-6 border-t border-slate-100">
+              <div className="flex items-center gap-2 text-xs text-slate-400 justify-center">
+                <Shield className="w-3 h-3" />
+                Your data is encrypted and never shared
+              </div>
             </div>
           </div>
         </div>
@@ -272,15 +297,15 @@ export default function SellerDashboard() {
     );
   }
 
-  // ── Dashboard (authenticated) ─────────────────────────────────────────────
+  // ── Dashboard (authenticated) ──
   return (
-    <main className="min-h-screen bg-slate-50">
+    <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
       <Navbar />
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-6 sm:py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 sm:mb-8">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#002147] mb-1">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#002147] mb-1">
               Seller Dashboard
             </h1>
             <p className="text-slate-500 text-sm">
@@ -290,62 +315,57 @@ export default function SellerDashboard() {
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push("/sell")}
-              className="hidden sm:inline-flex items-center gap-2 bg-[#25D366] hover:bg-[#1da851] text-white font-semibold px-4 py-2 rounded-full text-sm transition-all shadow"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-[#25D366] to-[#1da851] hover:from-[#1da851] hover:to-[#25D366] text-white font-semibold px-5 py-2.5 rounded-full text-sm transition-all shadow-lg hover:shadow-green-500/30 hover:scale-105 active:scale-95"
             >
               <PlusCircle className="w-4 h-4" />
               Post New Listing
             </button>
             <button
               onClick={handleLogout}
-              className="text-sm font-semibold text-slate-600 hover:text-[#002147] transition-colors"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 hover:text-red-600 transition-colors px-4 py-2.5 rounded-full hover:bg-red-50"
             >
-              Logout
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">Logout</span>
             </button>
           </div>
         </div>
 
         {/* Feedback messages */}
         {error && (
-          <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 mb-5 text-sm">
+          <div className="flex items-start gap-2 bg-red-50 border border-red-200 text-red-600 rounded-xl p-3 mb-5 text-sm animate-slide-down">
             <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
             {error}
           </div>
         )}
         {message && !error && (
-          <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-3 mb-5 text-sm">
+          <div className="flex items-start gap-2 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-3 mb-5 text-sm animate-slide-down">
             <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
             {message}
           </div>
         )}
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
-          <div className="bg-white rounded-xl shadow p-4 text-center">
-            <Package className="w-5 h-5 text-slate-400 mx-auto mb-1" />
-            <div className="text-2xl font-bold text-[#002147]">{stats.total}</div>
-            <div className="text-xs text-slate-500">Total</div>
+        {initialLoading ? (
+          <SkeletonDashboardStats />
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 sm:gap-4 mb-6 sm:mb-8">
+            {statCards.map((stat) => (
+              <div
+                key={stat.label}
+                className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 text-center hover:shadow-md transition-all duration-200 hover:-translate-y-0.5"
+              >
+                <div className={`inline-flex items-center justify-center w-10 h-10 ${stat.bg} rounded-xl mb-2`}>
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                </div>
+                <div className={`text-2xl font-bold ${stat.color}`}>{stat.value}</div>
+                <div className="text-xs text-slate-500 font-medium mt-0.5">{stat.label}</div>
+              </div>
+            ))}
           </div>
-          <div className="bg-white rounded-xl shadow p-4 text-center">
-            <Eye className="w-5 h-5 text-green-500 mx-auto mb-1" />
-            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
-            <div className="text-xs text-slate-500">Active</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 text-center">
-            <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
-            <div className="text-xs text-slate-500">Pending</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 text-center">
-            <div className="text-2xl font-bold text-red-600">{stats.sold}</div>
-            <div className="text-xs text-slate-500">Sold</div>
-          </div>
-          <div className="bg-white rounded-xl shadow p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">{stats.approved}</div>
-            <div className="text-xs text-slate-500">Approved</div>
-          </div>
-        </div>
+        )}
 
         {/* Filter Tabs */}
-        <div className="flex gap-2 mb-6 overflow-x-auto">
+        <div className="flex gap-2 mb-6 overflow-x-auto scrollbar-hide">
           {(["all", "active", "pending", "sold"] as const).map((filter) => {
             const count = filter === "all" ? stats.total : stats[filter];
             const label = filter.charAt(0).toUpperCase() + filter.slice(1);
@@ -353,66 +373,73 @@ export default function SellerDashboard() {
               <button
                 key={filter}
                 onClick={() => setActiveFilter(filter)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap transition-colors ${
+                className={`px-4 py-2.5 rounded-full text-sm font-semibold whitespace-nowrap transition-all duration-200 min-h-[40px] ${
                   activeFilter === filter
-                    ? "bg-[#002147] text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    ? "bg-[#002147] text-white shadow-md"
+                    : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
-                {label} ({count})
+                {label}
+                <span className={`ml-1.5 text-xs ${activeFilter === filter ? "text-white/70" : "text-slate-400"}`}>
+                  ({count})
+                </span>
               </button>
             );
           })}
         </div>
 
         {/* Listings */}
-        {displayedListings.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-6xl mb-4">📦</div>
+        {initialLoading ? (
+          <SkeletonListingGrid count={6} />
+        ) : displayedListings.length === 0 ? (
+          <div className="text-center py-16 animate-fade-in">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-100 rounded-2xl mb-4">
+              <Package className="w-10 h-10 text-slate-400" />
+            </div>
             <h2 className="text-xl font-bold text-slate-700 mb-2">
-              {listings.length === 0
-                ? "No listings yet"
-                : `No ${activeFilter} listings`}
+              {listings.length === 0 ? "No listings yet" : `No ${activeFilter} listings`}
             </h2>
-            <p className="text-slate-500 text-sm mb-6">
+            <p className="text-slate-500 text-sm mb-6 max-w-sm mx-auto">
               {listings.length === 0
-                ? "Start selling by posting your first item!"
+                ? "Start selling by posting your first item! Reach buyers worldwide."
                 : `You have no listings in the "${activeFilter}" tab.`}
             </p>
             {listings.length === 0 && (
               <button
                 onClick={() => router.push("/sell")}
-                className="inline-flex items-center gap-2 bg-[#25D366] text-white font-semibold px-6 py-3 rounded-full shadow hover:bg-[#1da851] transition-all"
+                className="inline-flex items-center gap-2 bg-gradient-to-r from-[#25D366] to-[#1da851] text-white font-semibold px-6 py-3 rounded-full shadow-lg hover:shadow-green-500/30 transition-all hover:scale-105 active:scale-95"
               >
+                <PlusCircle className="w-4 h-4" />
                 Post a Listing
               </button>
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 stagger-animate">
             {displayedListings.map((listing) => (
               <article
                 key={listing.id}
-                className="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-100"
+                className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300 card-hover"
               >
                 {/* Image */}
                 <div className="relative h-44 bg-slate-100">
                   <Image
-                    src={optimizeCloudinaryUrl(listing.image_urls?.[0] ?? "", 800)}
+                    src={optimizeCloudinaryUrl(listing.image_urls?.[0] ?? "", 600)}
                     alt={listing.title}
                     fill
                     className={`object-cover ${listing.is_sold ? "opacity-60" : ""}`}
                     sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    loading="lazy"
                   />
                   {listing.is_sold && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className="bg-red-500 text-white font-extrabold text-sm px-3 py-1 rounded-lg shadow">
+                      <span className="bg-red-500 text-white font-extrabold text-sm px-4 py-1.5 rounded-lg shadow-lg rotate-[-8deg]">
                         SOLD
                       </span>
                     </div>
                   )}
                   {!listing.is_approved && (
-                    <div className="absolute top-2 left-2 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full shadow-lg">
+                    <div className="absolute top-2.5 left-2.5 bg-amber-500 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow-lg">
                       Pending Review
                     </div>
                   )}
@@ -420,27 +447,27 @@ export default function SellerDashboard() {
 
                 {/* Details */}
                 <div className="p-4">
-                  <h2 className="font-bold text-[#002147] line-clamp-1">
+                  <h2 className="font-bold text-[#002147] line-clamp-1 text-sm sm:text-base">
                     {listing.title}
                   </h2>
-                  <p className="text-sm text-slate-500 line-clamp-2 mt-1">
+                  <p className="text-xs sm:text-sm text-slate-500 line-clamp-2 mt-1">
                     {listing.description}
                   </p>
-                  <div className="mt-2 text-sm font-semibold text-[#25D366]">
+                  <div className="mt-2 text-base sm:text-lg font-extrabold text-[#25D366]">
                     {listing.price}
                   </div>
 
                   <div className="mt-3 flex items-center gap-2 text-xs">
                     <span
-                      className={`px-2 py-1 rounded-full ${
+                      className={`px-2.5 py-1 rounded-full font-semibold ${
                         listing.is_approved
-                          ? "bg-emerald-100 text-emerald-700"
-                          : "bg-amber-100 text-amber-700"
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-amber-50 text-amber-700 border border-amber-200"
                       }`}
                     >
                       {listing.is_approved ? "Approved" : "Pending"}
                     </span>
-                    <span className="px-2 py-1 rounded-full bg-slate-100 text-slate-600">
+                    <span className="px-2.5 py-1 rounded-full bg-slate-50 text-slate-600 border border-slate-200">
                       {listing.category}
                     </span>
                   </div>
@@ -449,7 +476,7 @@ export default function SellerDashboard() {
                   <div className="mt-4 flex gap-2">
                     <Link
                       href={`/listings/${listing.id}`}
-                      className="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold py-2 rounded-xl transition-colors"
+                      className="flex-1 text-center bg-slate-50 hover:bg-slate-100 text-slate-700 text-sm font-semibold py-2.5 rounded-xl transition-colors border border-slate-200"
                     >
                       View
                     </Link>
@@ -458,7 +485,7 @@ export default function SellerDashboard() {
                       <button
                         onClick={() => setEditingId(listing.id)}
                         disabled={actionLoadingId !== null}
-                        className="flex-1 inline-flex items-center justify-center gap-1 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 text-blue-600 text-sm font-semibold py-2 rounded-xl transition-colors"
+                        className="flex-1 inline-flex items-center justify-center gap-1 bg-blue-50 hover:bg-blue-100 disabled:opacity-50 text-blue-600 text-sm font-semibold py-2.5 rounded-xl transition-colors border border-blue-200"
                         title="Edit listing details"
                       >
                         <Pencil className="w-4 h-4" />
@@ -469,10 +496,8 @@ export default function SellerDashboard() {
                     {!listing.is_sold ? (
                       <button
                         onClick={() => markAsSold(listing.id)}
-                        disabled={
-                          !listing.is_approved || actionLoadingId === listing.id
-                        }
-                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#002147] hover:bg-[#003580] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2 rounded-xl transition-colors"
+                        disabled={!listing.is_approved || actionLoadingId === listing.id}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-[#002147] hover:bg-[#003580] disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-semibold py-2.5 rounded-xl transition-colors"
                         title="Mark this item as sold"
                       >
                         {actionLoadingId === listing.id ? (
@@ -488,7 +513,7 @@ export default function SellerDashboard() {
                       <button
                         onClick={() => relistItem(listing.id)}
                         disabled={actionLoadingId === listing.id}
-                        className="flex-1 inline-flex items-center justify-center gap-1 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 text-amber-600 text-sm font-semibold py-2 rounded-xl transition-colors"
+                        className="flex-1 inline-flex items-center justify-center gap-1 bg-amber-50 hover:bg-amber-100 disabled:opacity-50 text-amber-600 text-sm font-semibold py-2.5 rounded-xl transition-colors border border-amber-200"
                         title="Re-list this item"
                       >
                         {actionLoadingId === listing.id ? (
@@ -504,7 +529,7 @@ export default function SellerDashboard() {
                   </div>
 
                   {confirmDeleteId === listing.id ? (
-                    <div className="mt-2 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+                    <div className="mt-3 flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2.5 animate-slide-down">
                       <p className="text-xs text-red-600 flex-1 font-medium">
                         Delete permanently?
                       </p>
@@ -530,7 +555,7 @@ export default function SellerDashboard() {
                     <button
                       onClick={() => setConfirmDeleteId(listing.id)}
                       disabled={actionLoadingId === listing.id}
-                      className="mt-2 w-full flex items-center justify-center gap-1.5 text-red-500 hover:bg-red-50 disabled:opacity-50 text-xs font-semibold py-1.5 rounded-xl border border-red-100 transition-colors"
+                      className="mt-2 w-full flex items-center justify-center gap-1.5 text-red-500 hover:bg-red-50 disabled:opacity-50 text-xs font-semibold py-2 rounded-xl border border-red-100 transition-colors"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       Delete Listing

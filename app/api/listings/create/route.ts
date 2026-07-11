@@ -1,89 +1,87 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import {
-  hashSellerPin,
-  isValidPin,
-  isValidWhatsapp,
-  normalizePin,
-  normalizeWhatsapp,
-} from "@/lib/seller-auth";
-
-interface CreateListingPayload {
-  title?: string;
-  description?: string;
-  price?: string;
-  category?: string;
-  image_urls?: string[];
-  seller_whatsapp?: string;
-  seller_pin?: string;
-  location?: string;
-  is_negotiable?: boolean;
-}
+import { hashSellerPin, normalizeWhatsapp } from "@/lib/seller-auth";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
-  const body = (await req.json()) as CreateListingPayload;
-
-  const title = String(body.title ?? "").trim();
-  const description = String(body.description ?? "").trim();
-  const price = String(body.price ?? "").trim();
-  const category = String(body.category ?? "").trim();
-  const location = String(body.location ?? "").trim();
-  const imageUrls = Array.isArray(body.image_urls)
-    ? body.image_urls.filter((url) => typeof url === "string" && url.length > 0)
-    : [];
-  const waClean = normalizeWhatsapp(String(body.seller_whatsapp ?? ""));
-  const pin = normalizePin(String(body.seller_pin ?? ""));
-
-  if (!title || !price || !category || !location) {
-    return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-  }
-
-  if (imageUrls.length === 0) {
-    return NextResponse.json({ error: "At least one image is required" }, { status: 400 });
-  }
-
-  if (!isValidWhatsapp(waClean)) {
-    return NextResponse.json({ error: "Invalid WhatsApp number format" }, { status: 400 });
-  }
-
-  if (!isValidPin(pin)) {
+  // Rate limit: 5 listings per hour per IP
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`create:${ip}`, { maxRequests: 5, windowMs: 60 * 60 * 1000 });
+  if (!rl.allowed) {
     return NextResponse.json(
-      { error: "PIN must be 4 to 8 digits" },
-      { status: 400 }
-    );
-  }
-
-  let sellerPinHash: string;
-  try {
-    sellerPinHash = hashSellerPin(pin);
-  } catch (error) {
-    return NextResponse.json(
+      { error: "Too many requests. Please wait before posting another listing." },
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "PIN configuration error",
-      },
-      { status: 500 }
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+          "X-RateLimit-Remaining": String(rl.remaining),
+        },
+      }
     );
   }
 
-  const { error } = await supabaseAdmin.from("listings").insert({
-    title,
-    description: description || null, // Handle optional description
-    price,
-    category,
-    image_urls: imageUrls,
-    seller_whatsapp: waClean,
-    seller_pin_hash: sellerPinHash,
-    location,
-    is_negotiable: Boolean(body.is_negotiable),
-    is_approved: true, // Auto-approve all listings
-  });
+  try {
+    const body = await req.json();
+    const {
+      title,
+      description,
+      price,
+      category,
+      seller_whatsapp,
+      seller_pin,
+      image_urls,
+      location,
+      is_negotiable,
+    } = body;
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Validate required fields
+    if (!title?.trim()) {
+      return NextResponse.json({ error: "Title is required." }, { status: 400 });
+    }
+    if (!price?.trim()) {
+      return NextResponse.json({ error: "Price is required." }, { status: 400 });
+    }
+    if (!seller_whatsapp?.trim()) {
+      return NextResponse.json({ error: "WhatsApp number is required." }, { status: 400 });
+    }
+    if (!seller_pin?.trim()) {
+      return NextResponse.json({ error: "Seller PIN is required." }, { status: 400 });
+    }
+    if (!image_urls || image_urls.length === 0) {
+      return NextResponse.json({ error: "At least one image is required." }, { status: 400 });
+    }
+    if (image_urls.length > 5) {
+      return NextResponse.json({ error: "Maximum of 5 images allowed." }, { status: 400 });
+    }
+
+    const waClean = normalizeWhatsapp(seller_whatsapp);
+    const pinHash = hashSellerPin(seller_pin.trim());
+
+    const { data, error } = await supabaseAdmin
+      .from("listings")
+      .insert({
+        title: title.trim(),
+        description: description?.trim() || null,
+        price: price.trim(),
+        category,
+        seller_whatsapp: waClean,
+        seller_pin_hash: pinHash,
+        image_urls,
+        location: location || "Unknown",
+        is_negotiable: is_negotiable ?? false,
+        is_approved: false,
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      console.error("[listings/create] Supabase error:", error);
+      return NextResponse.json({ error: "Failed to create listing. Please try again." }, { status: 500 });
+    }
+
+    return NextResponse.json({ id: data?.id }, { status: 201 });
+  } catch (err) {
+    console.error("[listings/create] Unexpected error:", err);
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
-
-  return NextResponse.json({ ok: true });
 }

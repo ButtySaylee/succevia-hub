@@ -1,5 +1,5 @@
 -- =============================================================================
--- GbanaMarket Row Level Security (RLS) Policies
+-- Succevia Hub Row Level Security (RLS) Policies
 -- =============================================================================
 -- This file contains all security policies for the Supabase database.
 -- Run this in Supabase SQL Editor to secure your database.

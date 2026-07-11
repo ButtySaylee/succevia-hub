@@ -1,49 +1,49 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminToken } from "@/lib/admin-auth";
+import { createHmac } from "crypto";
+import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? "";
 
-// In-memory rate limiter (per warm function instance).
-// Resets on cold start — still meaningfully limits brute-force within a session.
-const attempts = new Map<string, { count: number; lockedUntil: number }>();
-const MAX_FAILURES = 5;
-const LOCK_MS = 15 * 60 * 1000; // 15 minutes
-
-function getIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown"
-  );
+function hashPassword(password: string): string {
+  return createHmac("sha256", password).update("gbana_admin_v1").digest("hex");
 }
 
-export async function POST(request: NextRequest) {
-  const ip = getIp(request);
-  const now = Date.now();
-  const state = attempts.get(ip);
-
-  if (state && state.count >= MAX_FAILURES && now < state.lockedUntil) {
+export async function POST(req: NextRequest) {
+  // Rate limit: 10 attempts per 15 minutes per IP
+  const ip = getClientIp(req);
+  const rl = checkRateLimit(`admin-auth:${ip}`, { maxRequests: 10, windowMs: 15 * 60 * 1000 });
+  if (!rl.allowed) {
     return NextResponse.json(
-      { error: "Too many failed attempts. Try again in 15 minutes." },
-      { status: 429 }
+      { error: "Too many login attempts. Please try again later." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(Math.ceil((rl.resetAt - Date.now()) / 1000)),
+        },
+      }
     );
   }
 
   try {
-    const { password } = await request.json();
+    const { password } = await req.json();
 
-    if (!password || password !== ADMIN_PASSWORD) {
-      const current = attempts.get(ip) ?? { count: 0, lockedUntil: 0 };
-      const newCount = now > current.lockedUntil ? 1 : current.count + 1;
-      attempts.set(ip, {
-        count: newCount,
-        lockedUntil:
-          newCount >= MAX_FAILURES ? now + LOCK_MS : current.lockedUntil,
-      });
+    if (!password || !ADMIN_PASSWORD) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const hashed = hashPassword(password);
+    const expected = hashPassword(ADMIN_PASSWORD);
+
+    if (hashed !== expected) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    // Successful login — clear failure record
-    attempts.delete(ip);
-    return NextResponse.json({ success: true, token: getAdminToken() });
+    // Generate a session token (hashed password serves as token)
+    const token = createHmac("sha256", ADMIN_PASSWORD)
+      .update(`session:${Date.now()}`)
+      .digest("hex");
+
+    return NextResponse.json({ token, success: true });
   } catch {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
   }
