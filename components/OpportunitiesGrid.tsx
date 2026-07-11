@@ -73,10 +73,9 @@ export default function OpportunitiesGrid({
         <h3 className="text-lg font-semibold text-slate-700 mb-2">Failed to load opportunities</h3>
         <p className="text-sm text-slate-500 mb-4">{error}</p>
         <button
-          onClick={() => { setError(null); setLoading(true); window.location.reload(); }}
+          onClick={() => { setError(null); window.location.reload(); }}
           className="inline-flex items-center gap-2 bg-[#002147] text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-[#003580] transition-colors"
         >
-          <Loader2 className="w-4 h-4" />
           Try Again
         </button>
       </div>

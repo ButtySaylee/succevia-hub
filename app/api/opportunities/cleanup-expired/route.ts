@@ -24,8 +24,12 @@ export async function GET(req: NextRequest) {
     const visibleResult = await visibleQuery;
     let opportunities = visibleResult.data;
     let fetchError = visibleResult.error;
+    const missingVisibilityColumn = Boolean(
+      fetchError && typeof fetchError === "object" && "message" in fetchError &&
+        /is_visible/i.test(String((fetchError as { message?: unknown }).message))
+    );
 
-    if (fetchError && /is_visible/i.test(fetchError.message)) {
+    if (missingVisibilityColumn) {
       const fallbackResult = await supabaseAdmin
         .from("opportunities")
         .select("id, deadline, title")
@@ -62,7 +66,7 @@ export async function GET(req: NextRequest) {
 
     // Hide all expired opportunities from the public page, or deactivate them when the
     // visibility column does not exist yet.
-    const updateResult = fetchError && /is_visible/i.test(fetchError.message)
+    const updateResult = missingVisibilityColumn
       ? await supabaseAdmin
           .from("opportunities")
           .update({ is_active: false })

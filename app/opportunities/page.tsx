@@ -92,7 +92,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     console.error("[opportunities/page] Failed to fetch scholarships:", error.message);
   }
 
-  let opportunities = ((data ?? []) as Opportunity[]).map((opportunity) => ({
+  let opportunities = ((data ?? []) as unknown as Opportunity[]).map((opportunity) => ({
     ...opportunity,
     is_visible: opportunity.is_visible ?? true,
   }));

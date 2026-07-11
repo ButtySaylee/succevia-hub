@@ -60,7 +60,7 @@ export async function GET(req: NextRequest) {
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  let opportunities: Opportunity[] = ((data ?? []) as Opportunity[]).map((opportunity) => ({
+  let opportunities: Opportunity[] = ((data ?? []) as unknown as Opportunity[]).map((opportunity) => ({
     ...opportunity,
     is_visible: opportunity.is_visible ?? true,
   }));

@@ -166,7 +166,7 @@ export default function AdminOpportunities({ adminToken }: AdminOpportunitiesPro
       is_visible: opp.is_visible,
     });
     setImageFile(null);
-    setImagePreview(opp.image_url);
+    setImagePreview(opp.image_url ?? null);
     setFormError(null);
     setShowForm(true);
   }
