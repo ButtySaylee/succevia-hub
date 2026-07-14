@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Navbar from "@/components/Navbar";
 import { SERVICE_CATEGORIES, LIBERIA_COUNTIES, LIBERIA_CITIES } from "@/types";
-import { Wrench, Send, Loader2, AlertCircle, ChevronLeft } from "lucide-react";
+import { Wrench, Send, Loader2, AlertCircle, ChevronLeft, ImagePlus, X } from "lucide-react";
 import Link from "next/link";
+import imageCompression from "browser-image-compression";
 
 export default function RequestServicePage() {
+  const fileRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -20,6 +22,8 @@ export default function RequestServicePage() {
     whatsapp: "",
     name: "",
   });
+  const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -27,6 +31,61 @@ export default function RequestServicePage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
   };
+
+  function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const remainingSlots = 3 - imageFiles.length;
+    if (files.length > remainingSlots) {
+      setError(`You can upload up to 3 images. You can add ${remainingSlots} more.`);
+      return;
+    }
+
+    const oversized = files.filter(f => f.size > 5 * 1024 * 1024);
+    if (oversized.length > 0) {
+      setError("All images must be under 5 MB.");
+      return;
+    }
+
+    const newPreviews = files.map(f => URL.createObjectURL(f));
+    setImageFiles(prev => [...prev, ...files]);
+    setImagePreviews(prev => [...prev, ...newPreviews]);
+    setError(null);
+
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  function removeImage(index: number) {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => {
+      const newPreviews = prev.filter((_, i) => i !== index);
+      URL.revokeObjectURL(prev[index]);
+      return newPreviews;
+    });
+  }
+
+  async function uploadToCloudinary(file: File): Promise<string> {
+    const options = {
+      maxSizeMB: 1,
+      maxWidthOrHeight: 1920,
+      useWebWorker: true,
+      fileType: file.type as "image/jpeg" | "image/png" | "image/webp",
+    };
+    const compressedFile = await imageCompression(file, options);
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!;
+    const uploadPreset = process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET!;
+    const fd = new FormData();
+    fd.append("file", compressedFile);
+    fd.append("upload_preset", uploadPreset);
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+      { method: "POST", body: fd }
+    );
+    if (!res.ok) throw new Error("Image upload failed. Please try again.");
+    const data = await res.json();
+    return data.secure_url as string;
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,11 +96,40 @@ export default function RequestServicePage() {
     if (!form.whatsapp.trim()) { setError("Please enter your WhatsApp number."); return; }
 
     setSubmitting(true);
-    // Future: API call to create service request
-    setTimeout(() => {
+
+    try {
+      let imageUrls: string[] = [];
+      if (imageFiles.length > 0) {
+        imageUrls = await Promise.all(imageFiles.map(file => uploadToCloudinary(file)));
+      }
+
+      const res = await fetch("/api/services/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title.trim(),
+          description: form.description.trim(),
+          category: form.category,
+          budget: form.budget.trim() || null,
+          country: form.country,
+          county: form.county,
+          city: form.city,
+          service_mode: form.service_mode,
+          urgency: form.urgency,
+          whatsapp: form.whatsapp.trim(),
+          name: form.name.trim() || null,
+          image_urls: imageUrls,
+        }),
+      });
+
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error ?? "Failed to submit request.");
+
       setSuccess(true);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Something went wrong.");
       setSubmitting(false);
-    }, 1500);
+    }
   };
 
   if (success) {
@@ -148,6 +236,60 @@ export default function RequestServicePage() {
                   <option value="urgent">Urgent</option>
                 </select>
               </div>
+            </div>
+
+            {/* Image Upload */}
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-1.5">
+                Photos <span className="text-slate-400">(Optional - up to 3)</span>
+              </label>
+              
+              {imagePreviews.length > 0 && (
+                <div className="grid grid-cols-3 gap-3 mb-3">
+                  {imagePreviews.map((preview, idx) => (
+                    <div key={idx} className="relative group aspect-square">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={preview}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-full object-cover rounded-xl border-2 border-slate-200"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeImage(idx)}
+                        className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-bold shadow-lg opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
+                        title="Remove image"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {imageFiles.length < 3 && (
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  className="cursor-pointer border-2 border-dashed rounded-2xl flex flex-col items-center justify-center h-32 sm:h-40 transition-all duration-200 bg-slate-50 hover:bg-slate-100 hover:border-[#25D366] border-slate-300"
+                >
+                  <ImagePlus className="w-8 h-8 text-slate-400 mb-1" />
+                  <p className="text-slate-500 text-xs font-medium">
+                    {imagePreviews.length > 0 ? "Add more photos" : "Click to upload photos"}
+                  </p>
+                  <p className="text-slate-400 text-[10px] mt-0.5">
+                    JPG, PNG or WEBP · max 5 MB each
+                  </p>
+                </div>
+              )}
+
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleImageChange}
+              />
             </div>
 
             <div>

@@ -32,6 +32,9 @@ export default function ServicesPage() {
                 <Wrench className="w-5 h-5" />
                 Request a Service
               </Link>
+              <Link href="/services/requests" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur hover:bg-white/20 text-white px-6 py-3 rounded-2xl border border-white/20 transition-all hover:scale-105">
+                Browse Open Requests
+              </Link>
               <Link href="/professionals" className="inline-flex items-center gap-2 bg-white/10 backdrop-blur hover:bg-white/20 text-white px-6 py-3 rounded-2xl border border-white/20 transition-all hover:scale-105">
                 Find Professionals
               </Link>

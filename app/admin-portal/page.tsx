@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import { Listing, CATEGORIES } from "@/types";
 import PinResetAdmin from "@/components/PinResetAdmin";
 import AdminOpportunities from "@/components/AdminOpportunities";
+import AdminServiceRequests from "@/components/AdminServiceRequests";
 import {
   CheckCircle,
   Trash2,
@@ -24,11 +25,12 @@ import {
   Search,
   Key,
   Briefcase,
+  Wrench,
 } from "lucide-react";
 
 const SELL_CATEGORIES = CATEGORIES.filter((c) => c !== "All");
 
-type Tab = "pending" | "all" | "pin-resets" | "opportunities";
+type Tab = "pending" | "all" | "pin-resets" | "opportunities" | "service-requests";
 
 interface EditForm {
   title: string;
@@ -433,7 +435,7 @@ export default function AdminPortalPage() {
       {/* Tabs */}
       <div className="bg-white border-b border-slate-200">
         <div className="max-w-6xl mx-auto px-4 flex gap-1 pt-2">
-          {(["pending", "all", "pin-resets", "opportunities"] as Tab[]).map((t) => (
+          {(["pending", "all", "pin-resets", "opportunities", "service-requests"] as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -445,12 +447,15 @@ export default function AdminPortalPage() {
             >
               {t === "pin-resets" && <Key className="w-4 h-4" />}
               {t === "opportunities" && <Briefcase className="w-4 h-4" />}
+              {t === "service-requests" && <Wrench className="w-4 h-4" />}
               {t === "pending"
                 ? `Pending${stats.pending > 0 ? ` (${stats.pending})` : ""}`
                 : t === "all"
                 ? "All Listings"
                 : t === "pin-resets"
                 ? "PIN Resets"
+                : t === "service-requests"
+                ? "Service Requests"
                 : "Opportunities"}
             </button>
           ))}
@@ -463,9 +468,10 @@ export default function AdminPortalPage() {
 
         {/* Opportunities Tab */}
         {tab === "opportunities" && <AdminOpportunities adminToken={adminToken} />}
+        {tab === "service-requests" && <AdminServiceRequests adminToken={adminToken} />}
 
         {/* Listings Tabs */}
-        {tab !== "pin-resets" && tab !== "opportunities" && (
+        {tab !== "pin-resets" && tab !== "opportunities" && tab !== "service-requests" && (
           <>
             {/* Search + filter */}
             <div className="flex gap-2 mb-4">

@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
         image_urls,
         location: location || "Unknown",
         is_negotiable: is_negotiable ?? false,
-        is_approved: false,
+        is_approved: true,
       })
       .select("id")
       .single();

@@ -26,7 +26,8 @@ const QUICK_ACTIONS = [
   { href: "/marketplace", icon: ShoppingBag, label: "Marketplace", color: "bg-green-500" },
   { href: "/jobs", icon: Briefcase, label: "Find Jobs", color: "bg-blue-500" },
   { href: "/opportunities", icon: GraduationCap, label: "Scholarships", color: "bg-purple-500" },
-  { href: "/services", icon: Wrench, label: "Request Service", color: "bg-orange-500" },
+  { href: "/services/requests", icon: Wrench, label: "Browse Requests", color: "bg-orange-500" },
+  { href: "/services", icon: Wrench, label: "Request Service", color: "bg-amber-500" },
   { href: "/professionals", icon: Users, label: "Hire Pro", color: "bg-teal-500" },
   { href: "/businesses", icon: Building2, label: "Businesses", color: "bg-indigo-500" },
   { href: "/community", icon: Globe, label: "Communities", color: "bg-pink-500" },
@@ -59,10 +60,17 @@ const FEATURES = [
   },
   {
     icon: Wrench,
+    title: "Browse Service Requests",
+    description: "See open service requests from people who need tech support, repairs, design, tutoring, and more.",
+    href: "/services/requests",
+    color: "from-orange-500 to-orange-600",
+  },
+  {
+    icon: Wrench,
     title: "Request a Service",
     description: "Need tech support, repairs, design, or tutoring? Post a request and get quotations.",
     href: "/services",
-    color: "from-orange-500 to-orange-600",
+    color: "from-amber-500 to-amber-600",
   },
   {
     icon: Building2,
@@ -323,7 +331,8 @@ export default function HomePage() {
                   { href: "/marketplace", label: "Marketplace" },
                   { href: "/jobs", label: "Jobs" },
                   { href: "/opportunities", label: "Scholarships" },
-                  { href: "/services", label: "Services" },
+                  { href: "/services/requests", label: "Service Requests" },
+                  { href: "/services", label: "Request Service" },
                   { href: "/professionals", label: "Professionals" },
                 ].map((link) => (
                   <li key={link.href}>
