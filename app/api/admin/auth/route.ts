@@ -38,9 +38,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid password" }, { status: 401 });
     }
 
-    // Generate a session token (hashed password serves as token)
+    // Generate a stateless token that matches what verifyAdminRequest expects
     const token = createHmac("sha256", ADMIN_PASSWORD)
-      .update(`session:${Date.now()}`)
+      .update("gbana_admin_v1")
       .digest("hex");
 
     return NextResponse.json({ token, success: true });

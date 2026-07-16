@@ -92,10 +92,14 @@ function getUserName(req: any): string | null {
   if (req.name && typeof req.name === "string" && req.name.startsWith("{")) {
     try {
       const parsed = JSON.parse(req.name);
-      if (parsed.n) return parsed.n;
-    } catch {}
+      if (typeof parsed.n === "string" && parsed.n.trim()) return parsed.n.trim();
+      return null;
+    } catch {
+      return null;
+    }
   }
-  return req.name || null;
+  if (typeof req.name === "string" && req.name.startsWith("{")) return null;
+  return req.name?.trim() || null;
 }
 
 function getImageUrlsFromNameField(req: any): string[] {

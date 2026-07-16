@@ -3,6 +3,7 @@ import Link from "next/link";
 import { supabaseAdmin } from "@/lib/supabase";
 import { filterExpired } from "@/lib/opportunity-utils";
 import Navbar from "@/components/Navbar";
+import JobCard from "@/components/JobCard";
 import { Opportunity } from "@/types";
 import { Briefcase, Search, MapPin, Clock, Building2, ArrowRight, Sparkles, Filter } from "lucide-react";
 
@@ -237,60 +238,7 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
             {/* Job Cards Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
               {jobs.map((job) => (
-                <article
-                  key={job.id}
-                  className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-all duration-300 card-hover group"
-                >
-                  <div className="p-5 sm:p-6">
-                    {/* Header */}
-                    <div className="flex items-start gap-3 mb-3">
-                      <div className="w-10 h-10 bg-gradient-to-br from-[#002147] to-[#003580] rounded-xl flex items-center justify-center shrink-0 shadow-sm">
-                        <Briefcase className="w-5 h-5 text-white" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h2 className="font-bold text-[#002147] text-sm sm:text-base line-clamp-2 group-hover:text-[#25D366] transition-colors">
-                          {job.title}
-                        </h2>
-                        <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
-                          <Building2 className="w-3 h-3" />
-                          {job.organization}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Description */}
-                    <p className="text-xs sm:text-sm text-slate-500 line-clamp-2 mb-3 leading-relaxed">
-                      {job.description}
-                    </p>
-
-                    {/* Meta */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {job.location && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-slate-50 text-slate-600 px-2.5 py-1 rounded-full border border-slate-200">
-                          <MapPin className="w-3 h-3" />
-                          {job.location}
-                        </span>
-                      )}
-                      {job.deadline && (
-                        <span className="inline-flex items-center gap-1 text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full border border-amber-200">
-                          <Clock className="w-3 h-3" />
-                          {job.deadline}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Action */}
-                    <a
-                      href={job.application_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center justify-center gap-2 w-full bg-[#002147] hover:bg-[#003580] text-white text-sm font-semibold py-2.5 rounded-xl transition-all active:scale-95"
-                    >
-                      Apply Now
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
-                  </div>
-                </article>
+                <JobCard key={job.id} job={job} />
               ))}
             </div>
 
