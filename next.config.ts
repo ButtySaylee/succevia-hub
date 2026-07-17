@@ -37,10 +37,11 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'; " +
               "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://placehold.co; " +
               "font-src 'self' data:; " +
-              "connect-src 'self' https://*.supabase.co https://api.supabase.com; " +
+              "connect-src 'self' https://*.supabase.co https://api.supabase.com https://api.cloudinary.com https://www.google-analytics.com https://www.googletagmanager.com; " +
               "frame-src 'none'; " +
               "object-src 'none'; " +
               "base-uri 'self'; " +
+              "worker-src 'self' blob:; " +
               "form-action 'self';",
           },
           {

@@ -1,4 +1,5 @@
-import { supabaseAdmin } from "@/lib/supabase";
+// Simple in-memory fallback rate limiter for API routes
+// Automatically switches to distributed mode when rate_limits table exists in Supabase
 
 interface RateLimitConfig {
   maxRequests: number;
@@ -10,9 +11,22 @@ const DEFAULT_CONFIG: RateLimitConfig = {
   windowMs: 60 * 1000, // 1 minute
 };
 
+// In-memory fallback store (used when Supabase table doesn't exist yet)
+const inMemoryStore = new Map<string, { count: number; resetAt: number }>();
+
+// Clean up expired in-memory entries every 5 minutes
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, value] of inMemoryStore.entries()) {
+    if (value.resetAt < now) {
+      inMemoryStore.delete(key);
+    }
+  }
+}, 5 * 60 * 1000);
+
 /**
- * Distributed rate limit check using Supabase as the backend store.
- * Works across multiple serverless instances.
+ * Rate limit check for API routes.
+ * Uses Supabase as distributed store if available, falls back to in-memory.
  * Returns true if the request is allowed, false if rate limited.
  */
 export async function checkRateLimit(
@@ -21,78 +35,86 @@ export async function checkRateLimit(
 ): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   const { maxRequests, windowMs } = { ...DEFAULT_CONFIG, ...config };
   const now = Date.now();
-  const windowStart = now - windowMs;
 
+  // Try distributed rate limiting via Supabase
   try {
-    // Use Supabase as distributed store - insert a record for this request
-    // We use a dedicated table for rate limiting
-    const { error: insertError } = await supabaseAdmin
+    const { supabaseAdmin } = await import("@/lib/supabase");
+
+    // Check if rate_limits table exists first
+    const { error: tableCheckError } = await supabaseAdmin
       .from("rate_limits")
-      .insert({
+      .select("id", { count: "exact", head: true })
+      .limit(1);
+
+    if (!tableCheckError) {
+      // Table exists - use distributed rate limiting
+      const windowStart = now - windowMs;
+
+      // Insert a record for this request
+      await supabaseAdmin.from("rate_limits").insert({
         identifier,
         created_at: new Date(now).toISOString(),
       });
 
-    if (insertError) {
-      // Fallback: if table doesn't exist or error, allow the request
-      console.warn("[rate-limit] Supabase insert failed, allowing request:", insertError.message);
-      return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
-    }
+      // Count requests in the current window
+      const { count } = await supabaseAdmin
+        .from("rate_limits")
+        .select("*", { count: "exact", head: true })
+        .eq("identifier", identifier)
+        .gte("created_at", new Date(windowStart).toISOString());
 
-    // Count requests in the current window
-    const countQuery = await supabaseAdmin
-      .from("rate_limits")
-      .select("*", { count: "exact", head: true })
-      .eq("identifier", identifier)
-      .gte("created_at", new Date(windowStart).toISOString());
+      const requestCount = count || 0;
 
-    const { count, error: countError } = countQuery;
+      if (requestCount > maxRequests) {
+        return { allowed: false, remaining: 0, resetAt: windowStart + windowMs };
+      }
 
-    if (countError) {
-      console.warn("[rate-limit] Count query failed, allowing request:", countError.message);
-      return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
-    }
-
-    const requestCount = count || 0;
-
-    if (requestCount > maxRequests) {
-      // Rate limited - calculate when the window resets
       return {
-        allowed: false,
-        remaining: 0,
+        allowed: true,
+        remaining: maxRequests - requestCount,
         resetAt: windowStart + windowMs,
       };
     }
+  } catch {
+    // Table doesn't exist or error - fall through to in-memory fallback
+  }
 
-    return {
-      allowed: true,
-      remaining: maxRequests - requestCount,
-      resetAt: windowStart + windowMs,
-    };
-  } catch (err) {
-    // In case of any error, allow the request to not block legitimate users
-    console.warn("[rate-limit] Unexpected error, allowing request:", err);
+  // In-memory fallback (works without any database setup)
+  const record = inMemoryStore.get(identifier);
+
+  if (!record || record.resetAt < now) {
+    // First request or window expired — create new window
+    inMemoryStore.set(identifier, { count: 1, resetAt: now + windowMs });
     return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
   }
+
+  if (record.count >= maxRequests) {
+    // Rate limited
+    return { allowed: false, remaining: 0, resetAt: record.resetAt };
+  }
+
+  // Increment count
+  record.count++;
+  return { allowed: true, remaining: maxRequests - record.count, resetAt: record.resetAt };
 }
 
 /**
  * Clean up old rate limit records (call periodically, e.g., via cron)
  */
 export async function cleanupRateLimits(): Promise<number> {
-  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // 24 hours ago
-  const { data, error } = await supabaseAdmin
-    .from("rate_limits")
-    .delete()
-    .lt("created_at", cutoff)
-    .select("id");
+  try {
+    const { supabaseAdmin } = await import("@/lib/supabase");
+    const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await supabaseAdmin
+      .from("rate_limits")
+      .delete()
+      .lt("created_at", cutoff)
+      .select("id");
 
-  if (error) {
-    console.error("[rate-limit] Cleanup error:", error.message);
+    return data?.length || 0;
+  } catch {
     return 0;
   }
-
-  return data?.length || 0;
 }
 
 /**
