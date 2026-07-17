@@ -113,6 +113,12 @@ ON listings
 FOR SELECT
 USING (is_approved = true);
 
+-- Public insert: anyone can submit a listing (client-side via anon key)
+CREATE POLICY "public_insert_listings"
+ON listings
+FOR INSERT
+WITH CHECK (true);
+
 -- Service role full access
 CREATE POLICY "service_role_all_access"
 ON listings

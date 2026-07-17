@@ -3,16 +3,23 @@
 -- =============================================================================
 -- This file contains all security policies for the Supabase database.
 -- Run this in Supabase SQL Editor to secure your database.
---
--- IMPORTANT: Review and test these policies before deploying to production.
+-- =============================================================================
+
+-- =============================================================================
+-- LISTINGS TABLE
 -- =============================================================================
 
 -- Enable Row Level Security on listings table
 ALTER TABLE listings ENABLE ROW LEVEL SECURITY;
 
--- =============================================================================
--- PUBLIC READ POLICIES
--- =============================================================================
+-- Drop any existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Public can view approved listings" ON listings;
+DROP POLICY IF EXISTS "Anyone can insert listings" ON listings;
+DROP POLICY IF EXISTS "Service role can update listings" ON listings;
+DROP POLICY IF EXISTS "Service role can delete listings" ON listings;
+DROP POLICY IF EXISTS "public_read_approved_listings" ON listings;
+DROP POLICY IF EXISTS "public_insert_listings" ON listings;
+DROP POLICY IF EXISTS "service_role_all_access" ON listings;
 
 -- Allow anonymous users to view only approved listings
 CREATE POLICY "public_read_approved_listings"
@@ -20,54 +27,98 @@ ON listings
 FOR SELECT
 USING (is_approved = true);
 
--- =============================================================================
--- SERVICE ROLE POLICIES (Full Access)
--- =============================================================================
+-- Allow anonymous users to submit new listings (client-side via anon key)
+CREATE POLICY "public_insert_listings"
+ON listings
+FOR INSERT
+WITH CHECK (true);
 
 -- Service role (backend) has full access to all operations
--- This is used by API routes that use supabaseAdmin client
 CREATE POLICY "service_role_all_access"
 ON listings
 FOR ALL
 USING (auth.role() = 'service_role');
 
 -- =============================================================================
--- SECURITY NOTES
--- =============================================================================
--- 
--- 1. Only approved listings are visible to the public
--- 2. All write operations (INSERT, UPDATE, DELETE) must go through API routes
---    using the service role key (SUPABASE_SERVICE_ROLE_KEY)
--- 3. Never expose the service role key in client-side code
--- 4. The anon key (NEXT_PUBLIC_SUPABASE_ANON_KEY) only has SELECT permission
---    for approved listings
--- 
--- =============================================================================
--- ADDITIONAL RECOMMENDATIONS
--- =============================================================================
---
--- Consider adding these columns to track data better:
---   - view_count INTEGER DEFAULT 0
---   - last_viewed_at TIMESTAMPTZ
---   - expires_at TIMESTAMPTZ (for auto-expiring old listings)
---   - updated_at TIMESTAMPTZ
---
--- You may also want to add policies for:
---   - Rate limiting (using PostgreSQL functions)
---   - IP-based restrictions
---   - Time-based restrictions (e.g., no new listings after midnight)
---
+-- SERVICE REQUESTS TABLE
 -- =============================================================================
 
--- Verify RLS is enabled
-DO $$
-BEGIN
-  IF NOT (SELECT relrowsecurity FROM pg_class WHERE relname = 'listings') THEN
-    RAISE EXCEPTION 'RLS is not enabled on listings table!';
-  END IF;
-END $$;
+ALTER TABLE service_requests ENABLE ROW LEVEL SECURITY;
 
--- Show all policies (for verification)
+DROP POLICY IF EXISTS "Public can view open service requests" ON service_requests;
+DROP POLICY IF EXISTS "Anyone can submit service requests" ON service_requests;
+DROP POLICY IF EXISTS "Service role can update service requests" ON service_requests;
+DROP POLICY IF EXISTS "Service role can delete service requests" ON service_requests;
+
+CREATE POLICY "Public can view visible service requests"
+  ON service_requests FOR SELECT
+  USING (is_visible = true);
+
+CREATE POLICY "Anyone can submit service requests"
+  ON service_requests FOR INSERT
+  WITH CHECK (true);
+
+CREATE POLICY "Service role can update service requests"
+  ON service_requests FOR UPDATE
+  USING (auth.role() = 'service_role');
+
+CREATE POLICY "Service role can delete service requests"
+  ON service_requests FOR DELETE
+  USING (auth.role() = 'service_role');
+
+-- =============================================================================
+-- OPPORTUNITIES TABLE
+-- =============================================================================
+
+ALTER TABLE opportunities ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all reads on opportunities" ON opportunities;
+
+CREATE POLICY "Public can view active opportunities"
+  ON opportunities FOR SELECT
+  USING (is_active = true);
+
+-- =============================================================================
+-- RATE LIMITS TABLE (service role only)
+-- =============================================================================
+
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Service role only - rate_limits" ON rate_limits;
+CREATE POLICY "Service role only - rate_limits"
+  ON rate_limits
+  FOR ALL
+  USING (auth.role() = 'service_role');
+
+-- =============================================================================
+-- AUDIT LOGS TABLE (service role only)
+-- =============================================================================
+
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Service role only - audit_logs" ON audit_logs;
+CREATE POLICY "Service role only - audit_logs"
+  ON audit_logs
+  FOR ALL
+  USING (auth.role() = 'service_role');
+
+-- =============================================================================
+-- ADMIN LOCKOUTS TABLE (service role only)
+-- =============================================================================
+
+ALTER TABLE admin_lockouts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Service role only - admin_lockouts" ON admin_lockouts;
+CREATE POLICY "Service role only - admin_lockouts"
+  ON admin_lockouts
+  FOR ALL
+  USING (auth.role() = 'service_role');
+
+-- =============================================================================
+-- VERIFICATION
+-- =============================================================================
+
+-- Show all policies for verification
 SELECT 
   schemaname,
   tablename,
@@ -78,4 +129,4 @@ SELECT
   qual,
   with_check
 FROM pg_policies 
-WHERE tablename = 'listings';
+ORDER BY tablename, policyname;
