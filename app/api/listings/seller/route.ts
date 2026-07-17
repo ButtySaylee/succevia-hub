@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
   let sellerPinHash: string;
   try {
-    sellerPinHash = hashSellerPin(pin);
+    sellerPinHash = await hashSellerPin(pin);
   } catch (error) {
     return NextResponse.json(
       {

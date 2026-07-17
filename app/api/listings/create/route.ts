@@ -6,7 +6,7 @@ import { checkRateLimit, getClientIp } from "@/lib/rate-limit";
 export async function POST(req: NextRequest) {
   // Rate limit: 5 listings per hour per IP
   const ip = getClientIp(req);
-  const rl = checkRateLimit(`create:${ip}`, { maxRequests: 5, windowMs: 60 * 60 * 1000 });
+  const rl = await checkRateLimit(`create:${ip}`, { maxRequests: 5, windowMs: 60 * 60 * 1000 });
   if (!rl.allowed) {
     return NextResponse.json(
       { error: "Too many requests. Please wait before posting another listing." },
@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     }
 
     const waClean = normalizeWhatsapp(seller_whatsapp);
-    const pinHash = hashSellerPin(seller_pin.trim());
+    const pinHash = await hashSellerPin(seller_pin.trim());
 
     const { data, error } = await supabaseAdmin
       .from("listings")
@@ -80,8 +80,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json({ id: data?.id }, { status: 201 });
-  } catch (err) {
-    console.error("[listings/create] Unexpected error:", err);
+  } catch {
     return NextResponse.json({ error: "Invalid request." }, { status: 400 });
   }
 }

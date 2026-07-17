@@ -12,7 +12,7 @@ export async function PATCH(req: Request) {
 
     // Normalize before comparing
     const normalizedWa = normalizeWhatsapp(seller_whatsapp);
-    const pinHash = hashSellerPin(seller_pin);
+    const pinHash = await hashSellerPin(seller_pin);
 
     const { data: listing, error: fetchError } = await supabaseAdmin
       .from("listings")

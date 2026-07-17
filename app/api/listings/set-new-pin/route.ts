@@ -29,7 +29,7 @@ export async function POST(req: NextRequest) {
   // Find the reset request (include seller_whatsapp so we can update ALL their listings)
   const { data: resetRequest } = await supabaseAdmin
     .from("pin_reset_requests")
-    .select("id, listing_id, seller_whatsapp, status")
+    .select("id, listing_id, seller_whatsapp, status, expires_at")
     .eq("reset_token", reset_token)
     .single();
 
@@ -44,9 +44,17 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Check if the token has expired
+  if (resetRequest.expires_at && new Date(resetRequest.expires_at) < new Date()) {
+    return NextResponse.json(
+      { error: "Reset token has expired. Please submit a new PIN reset request." },
+      { status: 400 }
+    );
+  }
+
   let newPinHash: string;
   try {
-    newPinHash = hashSellerPin(pin);
+    newPinHash = await hashSellerPin(pin);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "PIN configuration error" },

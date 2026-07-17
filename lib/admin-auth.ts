@@ -1,20 +1,27 @@
-import { createHmac, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
+import jwt from "jsonwebtoken";
+
+const JWT_SECRET = process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || "fallback-secret-change-me";
+const JWT_EXPIRY = "24h";
 
 /**
- * Derives a stateless admin token from the admin password.
- * Token changes automatically if ADMIN_PASSWORD is rotated.
+ * Generates a JWT token for admin authentication with 24-hour expiry.
  */
-export function getAdminToken(): string {
-  const pw = process.env.ADMIN_PASSWORD ?? "";
-  return createHmac("sha256", pw).update("gbana_admin_v1").digest("hex");
+export function generateAdminToken(): string {
+  return jwt.sign(
+    {
+      role: "admin",
+      issuedAt: Date.now(),
+    },
+    JWT_SECRET,
+    { expiresIn: JWT_EXPIRY }
+  );
 }
 
 /**
- * Call at the top of every protected admin API route.
+ * Verifies the admin JWT token from the Authorization header.
  * Returns a 401 NextResponse if the request is not authorised,
  * or null if the caller is allowed to proceed.
- * Uses timing-safe comparison to prevent timing attacks.
  */
 export function verifyAdminRequest(req: NextRequest): NextResponse | null {
   const auth = req.headers.get("Authorization") ?? "";
@@ -24,16 +31,8 @@ export function verifyAdminRequest(req: NextRequest): NextResponse | null {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const expected = getAdminToken();
   try {
-    const tokenBuf = Buffer.from(token);
-    const expectedBuf = Buffer.from(expected);
-    if (
-      tokenBuf.length !== expectedBuf.length ||
-      !timingSafeEqual(tokenBuf, expectedBuf)
-    ) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    jwt.verify(token, JWT_SECRET);
   } catch {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }

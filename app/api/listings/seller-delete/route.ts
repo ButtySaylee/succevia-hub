@@ -37,7 +37,7 @@ export async function DELETE(req: NextRequest) {
 
   let pinHash: string;
   try {
-    pinHash = hashSellerPin(pin);
+    pinHash = await hashSellerPin(pin);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "PIN configuration error" },
@@ -55,7 +55,8 @@ export async function DELETE(req: NextRequest) {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[seller-delete] Database error:", error);
+    return NextResponse.json({ error: "Failed to delete listing." }, { status: 500 });
   }
 
   if (!data) {

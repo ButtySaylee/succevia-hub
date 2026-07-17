@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS pin_reset_requests (
   reason TEXT,
   status TEXT NOT NULL DEFAULT 'pending',  -- 'pending', 'approved', 'denied', 'completed'
   reset_token TEXT UNIQUE,  -- One-time token for setting new PIN
+  expires_at TIMESTAMPTZ NOT NULL DEFAULT NOW() + INTERVAL '1 hour',  -- Token expires after 1 hour
   requested_at TIMESTAMPTZ DEFAULT NOW(),
   approved_at TIMESTAMPTZ,
   completed_at TIMESTAMPTZ,

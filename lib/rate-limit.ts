@@ -1,11 +1,8 @@
-// Simple in-memory rate limiter for API routes
-// Note: For production with multiple instances, use Redis or a database-backed solution
-
-const requestCounts = new Map<string, { count: number; resetAt: number }>();
+import { supabaseAdmin } from "@/lib/supabase";
 
 interface RateLimitConfig {
-  maxRequests: number;    // Maximum requests allowed
-  windowMs: number;       // Time window in milliseconds
+  maxRequests: number;
+  windowMs: number;
 }
 
 const DEFAULT_CONFIG: RateLimitConfig = {
@@ -13,42 +10,89 @@ const DEFAULT_CONFIG: RateLimitConfig = {
   windowMs: 60 * 1000, // 1 minute
 };
 
-// Clean up expired entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, value] of requestCounts.entries()) {
-    if (value.resetAt < now) {
-      requestCounts.delete(key);
-    }
-  }
-}, 5 * 60 * 1000);
-
 /**
- * Rate limit check for API routes.
+ * Distributed rate limit check using Supabase as the backend store.
+ * Works across multiple serverless instances.
  * Returns true if the request is allowed, false if rate limited.
  */
-export function checkRateLimit(
+export async function checkRateLimit(
   identifier: string,
   config: Partial<RateLimitConfig> = {}
-): { allowed: boolean; remaining: number; resetAt: number } {
+): Promise<{ allowed: boolean; remaining: number; resetAt: number }> {
   const { maxRequests, windowMs } = { ...DEFAULT_CONFIG, ...config };
   const now = Date.now();
-  const record = requestCounts.get(identifier);
+  const windowStart = now - windowMs;
 
-  if (!record || record.resetAt < now) {
-    // First request or window expired — create new window
-    requestCounts.set(identifier, { count: 1, resetAt: now + windowMs });
+  try {
+    // Use Supabase as distributed store - insert a record for this request
+    // We use a dedicated table for rate limiting
+    const { error: insertError } = await supabaseAdmin
+      .from("rate_limits")
+      .insert({
+        identifier,
+        created_at: new Date(now).toISOString(),
+      });
+
+    if (insertError) {
+      // Fallback: if table doesn't exist or error, allow the request
+      console.warn("[rate-limit] Supabase insert failed, allowing request:", insertError.message);
+      return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
+    }
+
+    // Count requests in the current window
+    const countQuery = await supabaseAdmin
+      .from("rate_limits")
+      .select("*", { count: "exact", head: true })
+      .eq("identifier", identifier)
+      .gte("created_at", new Date(windowStart).toISOString());
+
+    const { count, error: countError } = countQuery;
+
+    if (countError) {
+      console.warn("[rate-limit] Count query failed, allowing request:", countError.message);
+      return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
+    }
+
+    const requestCount = count || 0;
+
+    if (requestCount > maxRequests) {
+      // Rate limited - calculate when the window resets
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: windowStart + windowMs,
+      };
+    }
+
+    return {
+      allowed: true,
+      remaining: maxRequests - requestCount,
+      resetAt: windowStart + windowMs,
+    };
+  } catch (err) {
+    // In case of any error, allow the request to not block legitimate users
+    console.warn("[rate-limit] Unexpected error, allowing request:", err);
     return { allowed: true, remaining: maxRequests - 1, resetAt: now + windowMs };
   }
+}
 
-  if (record.count >= maxRequests) {
-    // Rate limited
-    return { allowed: false, remaining: 0, resetAt: record.resetAt };
+/**
+ * Clean up old rate limit records (call periodically, e.g., via cron)
+ */
+export async function cleanupRateLimits(): Promise<number> {
+  const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(); // 24 hours ago
+  const { data, error } = await supabaseAdmin
+    .from("rate_limits")
+    .delete()
+    .lt("created_at", cutoff)
+    .select("id");
+
+  if (error) {
+    console.error("[rate-limit] Cleanup error:", error.message);
+    return 0;
   }
 
-  // Increment count
-  record.count++;
-  return { allowed: true, remaining: maxRequests - record.count, resetAt: record.resetAt };
+  return data?.length || 0;
 }
 
 /**

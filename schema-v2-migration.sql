@@ -409,3 +409,82 @@ ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
 ALTER TABLE saved_items ENABLE ROW LEVEL SECURITY;
+
+-- ====== Public Read Policies ======
+
+-- Users: anyone can read public user profiles
+CREATE POLICY "Public can view active users"
+  ON users FOR SELECT
+  USING (is_active = true);
+
+-- Profiles: anyone can read professional profiles
+CREATE POLICY "Public can view profiles"
+  ON profiles FOR SELECT
+  USING (true);
+
+-- Jobs: anyone can read active jobs
+CREATE POLICY "Public can view active jobs"
+  ON jobs FOR SELECT
+  USING (is_active = true);
+
+-- Scholarships: anyone can read active scholarships
+CREATE POLICY "Public can view active scholarships"
+  ON scholarships FOR SELECT
+  USING (is_active = true);
+
+-- Service Requests: anyone can read visible requests
+CREATE POLICY "Public can view visible service requests"
+  ON service_requests FOR SELECT
+  USING (is_visible = true);
+
+-- Quotations: anyone can read quotations (filtered at app layer)
+CREATE POLICY "Public can view quotations"
+  ON quotations FOR SELECT
+  USING (true);
+
+-- Businesses: anyone can read active businesses
+CREATE POLICY "Public can view active businesses"
+  ON businesses FOR SELECT
+  USING (is_active = true);
+
+-- Communities: anyone can read active communities
+CREATE POLICY "Public can view active communities"
+  ON communities FOR SELECT
+  USING (is_active = true);
+
+-- Reviews: anyone can read reviews
+CREATE POLICY "Public can view reviews"
+  ON reviews FOR SELECT
+  USING (true);
+
+-- Messages: only participants can read their messages
+CREATE POLICY "Participants can view messages"
+  ON messages FOR SELECT
+  USING (auth.uid() = ANY(
+    SELECT unnest(participants) FROM conversations WHERE id = conversation_id
+  ));
+
+-- Notifications: only the owner can read their notifications
+CREATE POLICY "Users can view own notifications"
+  ON notifications FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- Saved Items: only the owner can read their saved items
+CREATE POLICY "Users can view own saved items"
+  ON saved_items FOR SELECT
+  USING (auth.uid() = user_id);
+
+-- ====== Service Role Policies (Full Access) ======
+
+CREATE POLICY "Service role all access users" ON users FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access profiles" ON profiles FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access jobs" ON jobs FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access scholarships" ON scholarships FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access service_requests" ON service_requests FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access quotations" ON quotations FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access businesses" ON businesses FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access communities" ON communities FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access reviews" ON reviews FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access messages" ON messages FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access notifications" ON notifications FOR ALL USING (auth.role() = 'service_role');
+CREATE POLICY "Service role all access saved_items" ON saved_items FOR ALL USING (auth.role() = 'service_role');

@@ -11,7 +11,7 @@ export async function POST(req: Request) {
 
     // Normalize before comparing so "+231 777 123" matches "+231777123"
     const normalizedWa = normalizeWhatsapp(seller_whatsapp);
-    const pinHash = hashSellerPin(seller_pin);
+    const pinHash = await hashSellerPin(seller_pin);
 
     const { data: original, error: fetchError } = await supabaseAdmin
       .from("listings")

@@ -1,4 +1,6 @@
-import { createHash } from "crypto";
+import bcrypt from "bcryptjs";
+
+const BCRYPT_SALT_ROUNDS = 12;
 
 export function normalizeWhatsapp(value: string): string {
   return String(value ?? "").replace(/\s/g, "");
@@ -16,11 +18,19 @@ export function isValidPin(value: string): boolean {
   return /^\d{4,8}$/.test(value);
 }
 
-export function hashSellerPin(pin: string): string {
-  const secret = process.env.SELLER_PIN_SECRET;
-  if (!secret) {
-    throw new Error("SELLER_PIN_SECRET is not configured");
-  }
+/**
+ * Hash a seller PIN using bcrypt with a salt factor of 12.
+ * bcrypt is intentionally slow (CPU/memory intensive) to resist brute-force attacks.
+ * Each PIN gets a unique salt automatically.
+ */
+export async function hashSellerPin(pin: string): Promise<string> {
+  return bcrypt.hash(pin, BCRYPT_SALT_ROUNDS);
+}
 
-  return createHash("sha256").update(`${secret}:${pin}`).digest("hex");
+/**
+ * Verify a seller PIN against a bcrypt hash.
+ * Returns true if the PIN matches the hash.
+ */
+export async function verifySellerPin(pin: string, hash: string): Promise<boolean> {
+  return bcrypt.compare(pin, hash);
 }

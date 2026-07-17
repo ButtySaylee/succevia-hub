@@ -37,7 +37,7 @@ export async function PATCH(req: NextRequest) {
 
   let sellerPinHash: string;
   try {
-    sellerPinHash = hashSellerPin(pin);
+    sellerPinHash = await hashSellerPin(pin);
   } catch (error) {
     return NextResponse.json(
       {
@@ -62,12 +62,13 @@ export async function PATCH(req: NextRequest) {
     .maybeSingle();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("[seller-sold] Database error:", error);
+    return NextResponse.json({ error: "Failed to mark listing as sold." }, { status: 500 });
   }
 
   if (!data) {
     return NextResponse.json(
-      { error: "Listing not found or WhatsApp does not match" },
+      { error: "Listing not found or credentials do not match." },
       { status: 404 }
     );
   }

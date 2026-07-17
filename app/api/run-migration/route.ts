@@ -22,25 +22,31 @@ export async function GET(req: NextRequest) {
   }
 
   // Approach 2: Try direct SQL via the Supabase Management API
+  // Uses SUPABASE_MGMT_TOKEN instead of the service role key for security
   if (errors.length > 0) {
     try {
-      const mgmtRes = await fetch("https://api.supabase.com/v1/projects/qiqecvcmmkemracpuawj/sql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY || ""}`,
-        },
-        body: JSON.stringify({
-          query: sql,
-        }),
-      });
-      
-      if (mgmtRes.ok) {
-        results.push(`✅ Column image_urls added via Management API`);
-        errors.length = 0;
+      const mgmtToken = process.env.SUPABASE_MGMT_TOKEN;
+      if (!mgmtToken) {
+        results.push(`⚠️ SUPABASE_MGMT_TOKEN not set - skipping Management API approach`);
       } else {
-        const errText = await mgmtRes.text();
-        results.push(`❌ Management API: ${errText.substring(0, 100)}`);
+        const mgmtRes = await fetch("https://api.supabase.com/v1/projects/qiqecvcmmkemracpuawj/sql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${mgmtToken}`,
+          },
+          body: JSON.stringify({
+            query: sql,
+          }),
+        });
+        
+        if (mgmtRes.ok) {
+          results.push(`✅ Column image_urls added via Management API`);
+          errors.length = 0;
+        } else {
+          const errText = await mgmtRes.text();
+          results.push(`❌ Management API: ${errText.substring(0, 100)}`);
+        }
       }
     } catch (err) {
       results.push(`❌ Management API error: ${err instanceof Error ? err.message : "Unknown"}`);
