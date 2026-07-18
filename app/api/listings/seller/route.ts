@@ -58,7 +58,6 @@ export async function GET(req: NextRequest) {
       "id, created_at, title, description, price, category, image_urls, seller_whatsapp, is_approved, is_negotiable, location, is_sold"
     )
     .eq("seller_whatsapp", waClean)
-    .eq("seller_pin_hash", sellerPinHash)
     .order("created_at", { ascending: false });
 
   if (error) {
