@@ -200,6 +200,35 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
           </div>
         )}
 
+        {/* External Jobs Banner - Always visible when few jobs or no jobs */}
+        {(jobs.length === 0 || jobs.length <= 5) && (
+          <div className="mb-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 sm:p-6 animate-fade-in">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-amber-100 rounded-xl flex-shrink-0">
+                <Briefcase className="w-6 h-6 text-amber-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-amber-800 text-sm sm:text-base">
+                  Looking for more job opportunities?
+                </h3>
+                <p className="text-amber-700 text-xs sm:text-sm mt-1">
+                  Visit LiberiaHRJobs.com for the latest job listings across Liberia — 
+                  government, NGO, and private sector positions updated regularly.
+                </p>
+              </div>
+              <a
+                href="https://liberiahrjobs.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-all hover:scale-105 active:scale-95 shadow-md whitespace-nowrap flex-shrink-0"
+              >
+                Visit LiberiaHRJobs
+                <ArrowRight className="w-4 h-4" />
+              </a>
+            </div>
+          </div>
+        )}
+
         {jobs.length === 0 ? (
           <div className="text-center py-16 sm:py-20 bg-white rounded-3xl shadow-sm border border-slate-100 animate-fade-in">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-blue-50 rounded-2xl mb-4">
@@ -212,6 +241,15 @@ export default async function JobsPage({ searchParams }: JobsPageProps) {
                 : "No job openings are currently available. Check back soon or browse other opportunities."}
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <a
+                href="https://liberiahrjobs.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 bg-[#25D366] text-white font-semibold px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
+              >
+                <Briefcase className="w-4 h-4" />
+                Browse LiberiaHRJobs
+              </a>
               <Link
                 href="/opportunities"
                 className="inline-flex items-center gap-2 bg-[#002147] text-white font-semibold px-6 py-3 rounded-2xl shadow-lg hover:shadow-xl transition-all hover:scale-105 active:scale-95"
